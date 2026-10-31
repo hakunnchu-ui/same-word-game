@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同词相遇 - 异地双人默契大考验</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PeerJS 点对点实时通信 -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- 胜利彩带特效 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: radial-gradient(circle at 50% 20%, #2e1065 0%, #0f172a 60%, #020617 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .font-fun {
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glow-btn-pink {
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glow-btn-pink:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 30px rgba(236, 72, 153, 0.7);
+        }
+
+        .glow-btn-purple {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glow-btn-purple:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
+        }
+
+        .card-flip-container {
+            perspective: 1000px;
+        }
+        .card-flip-inner {
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+        }
+        .card-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 99px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-3 md:p-6 selection:bg-pink-500 selection:text-white">
+
+    <!-- 背景炫光装饰 -->
+    <div class="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-pink-600/20 to-purple-600/20 blur-[120px] rounded-full pointer-events-none animate-pulse-glow"></div>
+
+    <!-- 页头导航栏 -->
+    <header class="max-w-4xl mx-auto w-full flex items-center justify-between py-3 px-5 glass-card rounded-2xl mb-4 z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-xl shadow-lg font-bold">
+                💞
+            </div>
+            <div>
+                <span class="text-xl md:text-2xl font-fun font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300">
+                    同词相遇
+                </span>
+                <span class="hidden sm:inline-block ml-2 text-xs text-purple-300/70 border border-purple-500/30 px-2 py-0.5 rounded-full">异地默契大考验</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <!-- 音效开关 -->
+            <button id="soundToggle" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition" title="开关音效">
+                <i class="fas fa-volume-up text-base" id="soundIcon"></i>
+            </button>
+            <!-- 房间信息 -->
+            <div id="roomBadge" class="hidden flex items-center gap-2 bg-purple-950/70 border border-purple-500/40 px-3 py-1.5 rounded-xl">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="text-xs text-purple-200">房间:</span>
+                <span id="displayRoomCode" class="font-mono text-amber-300 font-extrabold tracking-widest text-sm"></span>
+                <button id="copyCodeBtn" title="复制邀请链接" class="ml-1 text-purple-300 hover:text-white transition">
+                    <i class="far fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主游戏区域 -->
+    <main class="max-w-4xl mx-auto w-full flex-1 flex flex-col justify-center z-10 py-2">
+
+        <!-- 1. 登录大厅界面 -->
+        <div id="screenLobby" class="glass-card rounded-3xl p-6 md:p-8 max-w-md mx-auto w-full text-center space-y-6">
+            <div class="space-y-2">
+                <h1 class="text-3xl font-fun font-bold text-white tracking-wide">心有灵犀 · 同词相遇</h1>
+                <p class="text-slate-300 text-xs md:text-sm">你们能在同一道题目下，说出完全相同的词语吗？</p>
+            </div>
+
+            <!-- 头像选择 -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-purple-300 uppercase tracking-wider block">选择你的专属头像</label>
+                <div class="flex justify-center gap-2" id="avatarSelector">
+                    <!-- 动态生成头像列表 -->
+                </div>
+            </div>
+
+            <!-- 玩家昵称输入 -->
+            <div class="space-y-1">
+                <input type="text" id="playerName" placeholder="输入你的昵称" maxlength="10" value="心灵投手"
+                    class="w-full bg-slate-900/90 border border-purple-500/30 focus:border-pink-500 rounded-xl px-4 py-3 text-center font-bold text-lg text-white outline-none transition shadow-inner">
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="space-y-3 pt-2">
+                <button id="btnCreateRoom" class="w-full glow-btn-pink font-bold py-3.5 px-6 rounded-xl text-white text-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-plus-circle"></i> 创建游戏房间
+                </button>
+                
+                <div class="flex items-center my-2">
+                    <div class="flex-1 border-t border-slate-700/80"></div>
+                    <span class="px-3 text-xs text-slate-400">或者加入好友房间</span>
+                    <div class="flex-1 border-t border-slate-700/80"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="inputRoomCode" placeholder="输入6位房间码" maxlength="6"
+                        class="flex-1 uppercase tracking-widest text-center bg-slate-900/90 border border-slate-700 focus:border-purple-500 rounded-xl px-3 py-3 font-mono font-bold text-lg outline-none">
+                    <button id="btnJoinRoom" class="glow-btn-purple font-bold px-6 rounded-xl text-white transition">
+                        加入
+                    </button>
+                </div>
+            </div>
+
+            <!-- 单人练习/本地试玩模式 -->
+            <div class="pt-2">
+                <button id="btnSoloPractice" class="text-xs text-slate-400 hover:text-pink-300 underline transition">
+                    想先体验玩法？点击进入单人/AI演示模式
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 等候室界面（设置题库与等待对方连接） -->
+        <div id="screenWaiting" class="hidden glass-card rounded-3xl p-6 md:p-8 max-w-xl mx-auto w-full text-center space-y-6">
+            <h2 class="text-2xl font-bold font-fun text-purple-200">游戏准备大厅</h2>
+
+            <!-- 双人对战卡片 -->
+            <div class="bg-slate-900/80 p-5 rounded-2xl flex items-center justify-around border border-purple-500/20 shadow-xl">
+                <!-- 本地玩家 -->
+                <div class="flex flex-col items-center gap-2">
+                    <div id="myAvatarDisplay" class="w-16 h-16 rounded-2xl bg-purple-900/60 flex items-center justify-center text-3xl border-2 border-pink-400 shadow-lg">
+                        🐶
+                    </div>
+                    <span id="myNameDisplay" class="font-bold text-slate-200 text-sm">玩家1</span>
+                    <span class="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full border border-pink-500/30">房主/你</span>
+                </div>
+
+                <div class="text-2xl font-fun font-black text-pink-400 animate-pulse">VS</div>
+
+                <!-- 远程好友 -->
+                <div class="flex flex-col items-center gap-2">
+                    <div id="peerAvatarDisplay" class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-3xl border-2 border-slate-700 border-dashed">
+                        ❓
+                    </div>
+                    <span id="peerNameDisplay" class="font-bold text-slate-400 text-sm">等待好友加入...</span>
+                    <span id="peerStatusTag" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">未就绪</span>
+                </div>
+            </div>
+
+            <!-- 邀请链接卡片 -->
+            <div class="bg-purple-950/40 border border-purple-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                <div>
+                    <div class="text-xs text-purple-300 font-semibold">发送此房间码给你的好友：</div>
+                    <div id="shareCodeText" class="font-mono text-2xl font-bold text-amber-300 tracking-wider">------</div>
+                </div>
+                <button id="btnCopyInvite" class="bg-purple-600 hover:bg-purple-500 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 w-full sm:w-auto justify-center transition">
+                    <i class="far fa-copy"></i> 复制专属邀请链接
+                </button>
+            </div>
+
+            <!-- 主持人设置题库类别 -->
+            <div id="categorySection" class="space-y-3 text-left">
+                <label class="text-xs font-semibold text-purple-300 uppercase tracking-wider block text-center">选择题目主题类别</label>
+                <div class="grid grid-cols-2 gap-2.5" id="categoryGrid">
+                    <div data-cat="classic" class="cat-card border-2 border-pink-500 bg-pink-950/40 p-3 rounded-xl cursor-pointer hover:border-pink-400 transition flex items-center gap-3">
+                        <span class="text-2xl">🌟</span>
+                        <div>
+                            <div class="font-bold text-white text-xs">经典生活</div>
+                            <div class="text-[10px] text-slate-400">日常、美食、情感、地点</div>
+                        </div>
+                    </div>
+                    <div data-cat="creative" class="cat-card border-2 border-slate-700 bg-slate-900/40 p-3 rounded-xl cursor-pointer hover:border-pink-400 transition flex items-center gap-3">
+                        <span class="text-2xl">🧠</span>
+                        <div>
+                            <div class="font-bold text-white text-xs">脑洞大开</div>
+                            <div class="text-[10px] text-slate-400">奇幻、超能力、宇宙幻想</div>
+                        </div>
+                    </div>
+                    <div data-cat="pop" class="cat-card border-2 border-slate-700 bg-slate-900/40 p-3 rounded-xl cursor-pointer hover:border-pink-400 transition flex items-center gap-3">
+                        <span class="text-2xl">🎬</span>
+                        <div>
+                            <div class="font-bold text-white text-xs">流行文化</div>
+                            <div class="text-[10px] text-slate-400">影视、动漫、网络热梗</div>
+                        </div>
+                    </div>
+                    <div data-cat="custom" class="cat-card border-2 border-slate-700 bg-slate-900/40 p-3 rounded-xl cursor-pointer hover:border-pink-400 transition flex items-center gap-3">
+                        <span class="text-2xl">✏️</span>
+                        <div>
+                            <div class="font-bold text-white text-xs">自定义出题</div>
+                            <div class="text-[10px] text-slate-400">由你亲自输入出题!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自定义出题输入框 (仅当选择自定义时显示) -->
+                <div id="customPromptBox" class="hidden mt-3">
+                    <input type="text" id="inputCustomPrompt" placeholder="请输入你的自定义题目 (如: 适合两个人一起做的事)" 
+                        class="w-full bg-slate-900/90 border border-purple-500/50 rounded-xl p-3 text-sm font-semibold outline-none focus:border-pink-500">
+                </div>
+            </div>
+
+            <button id="btnStartGame" disabled class="w-full bg-slate-800 text-slate-500 cursor-not-allowed font-fun font-bold py-4 px-6 rounded-2xl text-xl transition shadow-lg">
+                等待好友连接中...
+            </button>
+        </div>
+
+        <!-- 3. 正式游戏主界面 -->
+        <div id="screenGame" class="hidden flex-1 flex flex-col space-y-4">
+            
+            <!-- 顶部 HUD：分数、默契连击、轮次 -->
+            <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                <!-- 我的账号 -->
+                <div class="flex items-center gap-2 md:gap-3">
+                    <span id="hudMyAvatar" class="text-2xl">🐶</span>
+                    <div>
+                        <div id="hudMyName" class="text-xs text-slate-400 font-bold">你</div>
+                        <div id="hudSyncScore" class="text-lg md:text-xl font-fun font-bold text-pink-400">默契度 0%</div>
+                    </div>
+                </div>
+
+                <!-- 中间：连击与轮次 -->
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-pink-500/20 border border-amber-500/40 px-3 py-1 rounded-full">
+                        <span class="text-amber-400">🔥 默契连击:</span>
+                        <span id="hudStreak" class="font-mono font-extrabold text-amber-300 text-base">0</span>
+                    </div>
+                    <span id="hudRoundText" class="text-[11px] text-slate-400 mt-1 font-semibold">第 1 轮大考验</span>
+                </div>
+
+                <!-- 好友账号 -->
+                <div class="flex items-center gap-2 md:gap-3 flex-row-reverse text-right">
+                    <span id="hudPeerAvatar" class="text-2xl">🐱</span>
+                    <div>
+                        <div id="hudPeerName" class="text-xs text-slate-400 font-bold">好友</div>
+                        <div id="hudHistoryStats" class="text-xs text-purple-300">成功 0 / 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主题目/桥梁卡片 -->
+            <div class="glass-card rounded-3xl p-6 md:p-8 flex flex-col items-center text-center relative overflow-hidden">
+                <!-- 桥梁回合标识 -->
+                <div id="bridgeBadge" class="hidden mb-3 inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
+                    <i class="fas fa-bridge"></i> 开启“桥梁回合”：寻找两个词之间的共同联想！
+                </div>
+
+                <div class="text-xs font-bold text-purple-300/80 uppercase tracking-widest mb-1" id="promptCategoryTag">
+                    【经典生活】题目
+                </div>
+                
+                <!-- 题目内容 -->
+                <h2 id="displayPrompt" class="text-2xl md:text-3xl font-fun font-extrabold text-white leading-relaxed my-2 drop-shadow-md">
+                    "提到夏天，你第一个想到的词是？"
+                </h2>
+
+                <!-- 上一轮如果没配对成功，显示的两个词 -->
+                <div id="bridgePreviousWords" class="hidden mt-3 flex items-center justify-center gap-3 bg-slate-900/80 border border-cyan-500/40 p-3 rounded-2xl w-full max-w-md">
+                    <div class="text-pink-300 font-bold text-sm" id="prevWord1">词语A</div>
+                    <div class="text-cyan-400 text-xs font-black">+</div>
+                    <div class="text-indigo-300 font-bold text-sm" id="prevWord2">词语B</div>
+                </div>
+            </div>
+
+            <!-- 词语翻牌展示区域 -->
+            <div class="grid grid-cols-2 gap-4 my-2">
+                <!-- 我的选词卡片 -->
+                <div class="card-flip-container h-32 md:h-40">
+                    <div id="myCardInner" class="card-flip-inner relative w-full h-full">
+                        <!-- 正面 (输入中/未揭晓) -->
+                        <div class="card-front absolute inset-0 glass-card rounded-2xl flex flex-col items-center justify-center p-4 border-2 border-pink-500/30">
+                            <span id="myStatusIcon" class="text-3xl mb-1">✍️</span>
+                            <span id="myStatusText" class="text-xs font-bold text-slate-300">正在思考答案...</span>
+                        </div>
+                        <!-- 背面 (已揭晓) -->
+                        <div class="card-back absolute inset-0 bg-gradient-to-br from-pink-900/80 to-purple-900/80 border-2 border-pink-400 rounded-2xl flex flex-col items-center justify-center p-4 shadow-2xl">
+                            <span class="text-[10px] text-pink-300 uppercase font-bold mb-1">你的词语</span>
+                            <span id="myRevealedWord" class="text-xl md:text-2xl font-bold font-fun text-white">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 好友选词卡片 -->
+                <div class="card-flip-container h-32 md:h-40">
+                    <div id="peerCardInner" class="card-flip-inner relative w-full h-full">
+                        <!-- 正面 -->
+                        <div class="card-front absolute inset-0 glass-card rounded-2xl flex flex-col items-center justify-center p-4 border-2 border-purple-500/30">
+                            <span id="peerStatusIcon" class="text-3xl mb-1">⏳</span>
+                            <span id="peerStatusText" class="text-xs font-bold text-slate-300">等待对方作答...</span>
+                        </div>
+                        <!-- 背面 -->
+                        <div class="card-back absolute inset-0 bg-gradient-to-br from-indigo-900/80 to-purple-900/80 border-2 border-indigo-400 rounded-2xl flex flex-col items-center justify-center p-4 shadow-2xl">
+                            <span class="text-[10px] text-indigo-300 uppercase font-bold mb-1">好友的词语</span>
+                            <span id="peerRevealedWord" class="text-xl md:text-2xl font-bold font-fun text-white">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 玩家词语提交输入框与控制 -->
+            <div id="submissionBox" class="glass-card rounded-2xl p-4">
+                <form id="wordForm" class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="inputWord" placeholder="输入你想到的词语 (如: 西瓜)" maxlength="12" autocomplete="off"
+                        class="flex-1 bg-slate-900/90 border border-slate-700 focus:border-pink-500 rounded-xl px-4 py-3 font-bold text-lg text-center sm:text-left outline-none transition">
+                    <button type="submit" id="btnSubmitWord" class="glow-btn-pink font-bold px-8 py-3 rounded-xl text-white text-base transition">
+                        锁定提交 🔒
+                    </button>
+                </form>
+            </div>
+
+            <!-- 互动表情快弹 & 聊天框 -->
+            <div class="glass-card rounded-2xl p-3 flex items-center justify-between gap-2">
+                <div class="flex gap-1.5 overflow-x-auto py-1" id="quickEmotes">
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">❤️</button>
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">😂</button>
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">🤔</button>
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">🎉</button>
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">🤯</button>
+                    <button class="emote-btn px-2.5 py-1.5 bg-slate-800/80 hover:bg-purple-900/50 rounded-xl text-lg transition">🙈</button>
+                </div>
+                <!-- 历史记录记录弹窗触发 -->
+                <button id="btnToggleHistory" class="px-3 py-1.5 bg-purple-900/50 border border-purple-500/30 text-purple-200 text-xs font-bold rounded-xl whitespace-nowrap hover:bg-purple-800/60 transition">
+                    📜 默契足迹
+                </button>
+            </div>
+
+        </div>
+
+        <!-- 默契历史记录弹窗 -->
+        <div id="modalHistory" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div class="glass-card rounded-3xl p-6 max-w-md w-full max-h-[80vh] flex flex-col border border-purple-500/30">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-700/60 mb-3">
+                    <h3 class="text-xl font-fun font-bold text-purple-200">默契记录足迹</h3>
+                    <button id="btnCloseHistory" class="text-slate-400 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="historyList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                    <!-- 历史纪录动态插入 -->
+                    <div class="text-center text-slate-500 py-6">尚无对局记录，快去答题吧！</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="text-center text-slate-500 text-xs py-3 z-10">
+        《同词相遇》 &copy; 异地双人 WebRTC 点对点默契体验
+    </footer>
+
+    <!-- 逻辑控制脚本 -->
+    <script>
+        /* ==========================================================================
+           1. Web Audio API 合成音效引擎
+           ========================================================================== */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.1) {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            // 成功配对音效
+            playSuccessFanfare() {
+                if (this.muted) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((n, i) => {
+                    setTimeout(() => this.playTone(n, 'triangle', 0.2, 0.15), i * 90);
+                });
+            }
+
+            // 配对失败音效
+            playMissBuzzer() {
+                if (this.muted) return;
+                this.playTone(261.63, 'sawtooth', 0.2, 0.15);
+                setTimeout(() => this.playTone(220.00, 'sawtooth', 0.3, 0.15), 150);
+            }
+
+            // 点击音效
+            playClick() {
+                this.playTone(587.33, 'sine', 0.05, 0.08);
+            }
+
+            // 揭晓纸牌音效
+            playReveal() {
+                this.playTone(440, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(880, 'sine', 0.15, 0.1), 80);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        /* ==========================================================================
+           2. 题库与全局数据状态
+           ========================================================================== */
+        const AVATARS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🦄', '🤖', '🐰', '🦁'];
+
+        // 默认内置题库
+        const PROMPT_DATABASE = {
+            classic: [
+                "提到“夏天”，你第一个想到的词是？",
+                "说到“甜的食物”，你最先想到？",
+                "一种适合两个人一起做的运动？",
+                "说到“去海边必须带的东西”？",
+                "一种表示“开心”的动物？",
+                "最适合下雨天吃的美食是？",
+                "提到“红色”，你脑海里出现的物品？",
+                "谈恋爱时最浪漫的地点？"
+            ],
+            creative: [
+                "比宇宙还要大的东西是？",
+                "如果可以拥有神奇超能力，你最想拥有？",
+                "如果外星人来到地球，第一件事会干嘛？",
+                "假如世界末日只剩最后一天，要做什么？",
+                "如果变成一种植物，你想成为？",
+                "用一个词形容“时间”的概念？"
+            ],
+            pop: [
+                "说到经典的超级英雄，你最先想到？",
+                "最容易在朋友圈刷屏的热门词汇？",
+                "童年记忆最深的一部动画片？",
+                "最火的去旅行打卡城市？",
+                "提到“网络热梗”，你第一个想到的？"
+            ]
+        };
+
+        const state = {
+            peer: null,
+            conn: null,
+            isHost: false,
+            roomCode: '',
+
+            // 玩家个人资料
+            myAvatar: AVATARS[0],
+            myName: '心灵投手',
+            peerAvatar: '❓',
+            peerName: '等待好友',
+
+            // 游戏设定
+            category: 'classic',
+            currentPrompt: '',
+            isBridgeRound: false,
+            prevWord1: '',
+            prevWord2: '',
+
+            // 答题与分数状态
+            roundCount: 1,
+            matchCount: 0,
+            streak: 0,
+            myWord: '',
+            peerWord: null,
+
+            // 历史记录
+            history: []
+        };
+
+        /* ==========================================================================
+           3. 页面初始化
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initAvatarSelector();
+            bindEvents();
+            checkUrlRoomCode();
+        });
+
+        function initAvatarSelector() {
+            const container = document.getElementById('avatarSelector');
+            container.innerHTML = '';
+            AVATARS.slice(0, 6).forEach((emoji, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `w-10 h-10 rounded-xl text-xl flex items-center justify-center border-2 transition ${idx === 0 ? 'border-pink-500 bg-pink-900/50 scale-110 shadow-lg' : 'border-slate-700 bg-slate-900/50 hover:border-slate-500'}`;
+                btn.innerText = emoji;
+                btn.onclick = () => {
+                    sound.playClick();
+                    state.myAvatar = emoji;
+                    Array.from(container.children).forEach(c => c.className = c.className.replace('border-pink-500 bg-pink-900/50 scale-110 shadow-lg', 'border-slate-700 bg-slate-900/50'));
+                    btn.className = btn.className.replace('border-slate-700 bg-slate-900/50', 'border-pink-500 bg-pink-900/50 scale-110 shadow-lg');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function checkUrlRoomCode() {
+            const params = new URLSearchParams(window.location.search);
+            const room = params.get('room');
+            if (room) {
+                document.getElementById('inputRoomCode').value = room.toUpperCase();
+            }
+        }
+
+        /* ==========================================================================
+           4. PEER-TO-PEER WebRTC 点对点通信网络逻辑
+           ========================================================================== */
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for(let i=0; i<6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function initPeer(customId = null) {
+            return new Promise((resolve, reject) => {
+                const peer = customId ? new Peer(customId) : new Peer();
+
+                peer.on('open', (id) => {
+                    state.peer = peer;
+                    resolve(id);
+                });
+
+                peer.on('connection', (conn) => {
+                    state.conn = conn;
+                    setupConnectionListeners();
+                });
+
+                peer.on('error', (err) => {
+                    console.error('PeerJS 错误:', err);
+                    alert('网络连接错误或房间码无效，请重试！');
+                    reject(err);
+                });
+            });
+        }
+
+        function setupConnectionListeners() {
+            state.conn.on('open', () => {
+                // 成功建立连接后，互相发送个人档案
+                sendNetworkData('PROFILE', { name: state.myName, avatar: state.myAvatar });
+                updateLobbyUIConnected();
+            });
+
+            state.conn.on('data', (data) => {
+                handleIncomingNetworkData(data);
+            });
+
+            state.conn.on('close', () => {
+                alert('好友已断开连接。');
+                window.location.reload();
+            });
+        }
+
+        function sendNetworkData(type, payload) {
+            if (state.conn && state.conn.open) {
+                state.conn.send({ type, payload });
+            }
+        }
+
+        function handleIncomingNetworkData({ type, payload }) {
+            switch(type) {
+                case 'PROFILE':
+                    state.peerName = payload.name;
+                    state.peerAvatar = payload.avatar;
+                    updateLobbyUIConnected();
+                    break;
+
+                case 'GAME_START':
+                    state.category = payload.category;
+                    state.currentPrompt = payload.prompt;
+                    startActiveGame(false);
+                    break;
+
+                case 'SUBMIT_WORD':
+                    state.peerWord = payload.word;
+                    updatePeerStatusSubmitted();
+                    checkBothSubmitted();
+                    break;
+
+                case 'NEXT_ROUND':
+                    state.isBridgeRound = payload.isBridgeRound;
+                    state.currentPrompt = payload.prompt;
+                    state.prevWord1 = payload.prevWord1;
+                    state.prevWord2 = payload.prevWord2;
+                    setupRoundView();
+                    break;
+
+                case 'EMOTE':
+                    showEmoteBubble(false, payload.emote);
+                    break;
+            }
+        }
+
+        /* ==========================================================================
+           5. 事件监听绑定与界面交互
+           ========================================================================== */
+        function bindEvents() {
+            // 开关音效
+            document.getElementById('soundToggle').onclick = () => {
+                sound.muted = !sound.muted;
+                document.getElementById('soundIcon').className = sound.muted ? 'fas fa-volume-mute text-red-400' : 'fas fa-volume-up text-base';
+            };
+
+            // 创建房间
+            document.getElementById('btnCreateRoom').onclick = async () => {
+                sound.playClick();
+                const nameInput = document.getElementById('playerName').value.trim();
+                state.myName = nameInput || '心灵投手';
+                state.isHost = true;
+                
+                const code = generateRoomCode();
+                state.roomCode = code;
+
+                try {
+                    await initPeer('same-word-' + code);
+                    showScreen('screenWaiting');
+                    updateWaitingRoomUI();
+                } catch(e) { console.error(e); }
+            };
+
+            // 加入房间
+            document.getElementById('btnJoinRoom').onclick = async () => {
+                sound.playClick();
+                const nameInput = document.getElementById('playerName').value.trim();
+                const codeInput = document.getElementById('inputRoomCode').value.trim().toUpperCase();
+                
+                if (!codeInput || codeInput.length !== 6) {
+                    alert('请输入正确的6位房间码！');
+                    return;
+                }
+
+                state.myName = nameInput || '灵犀伙伴';
+                state.isHost = false;
+                state.roomCode = codeInput;
+
+                try {
+                    await initPeer();
+                    const conn = state.peer.connect('same-word-' + codeInput);
+                    state.conn = conn;
+                    setupConnectionListeners();
+                    showScreen('screenWaiting');
+                    updateWaitingRoomUI();
+                } catch(e) { console.error(e); }
+            };
+
+            // 单人试玩 / AI 模式
+            document.getElementById('btnSoloPractice').onclick = () => {
+                sound.playClick();
+                state.myName = '你';
+                state.peerName = 'AI 灵犀伴侣';
+                state.peerAvatar = '🤖';
+                state.isHost = true;
+                showScreen('screenWaiting');
+                updateWaitingRoomUI();
+                updateLobbyUIConnected();
+            };
+
+            // 复制邀请链接
+            const copyInviteAction = () => {
+                sound.playClick();
+                const url = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = url;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                alert('专属邀请链接已成功复制到剪贴板，快发送给好友吧！');
+            };
+            document.getElementById('btnCopyInvite').onclick = copyInviteAction;
+            document.getElementById('copyCodeBtn').onclick = copyInviteAction;
+
+            // 选择主题分类
+            document.querySelectorAll('.cat-card').forEach(card => {
+                card.onclick = () => {
+                    if (!state.isHost) return;
+                    sound.playClick();
+                    document.querySelectorAll('.cat-card').forEach(c => {
+                        c.classList.remove('border-pink-500', 'bg-pink-950/40');
+                        c.classList.add('border-slate-700', 'bg-slate-900/40');
+                    });
+                    card.classList.remove('border-slate-700', 'bg-slate-900/40');
+                    card.classList.add('border-pink-500', 'bg-pink-950/40');
+                    
+                    state.category = card.getAttribute('data-cat');
+                    const customBox = document.getElementById('customPromptBox');
+                    if (state.category === 'custom') {
+                        customBox.classList.remove('hidden');
+                    } else {
+                        customBox.classList.add('hidden');
+                    }
+                };
+            });
+
+            // 开始游戏按钮
+            document.getElementById('btnStartGame').onclick = () => {
+                if (!state.isHost) return;
+                sound.playClick();
+
+                let prompt = '';
+                if (state.category === 'custom') {
+                    prompt = document.getElementById('inputCustomPrompt').value.trim();
+                    if (!prompt) {
+                        alert('请输入自定义题目内容！');
+                        return;
+                    }
+                } else {
+                    const list = PROMPT_DATABASE[state.category];
+                    prompt = list[Math.floor(Math.random() * list.length)];
+                }
+
+                state.currentPrompt = prompt;
+                sendNetworkData('GAME_START', { category: state.category, prompt });
+                startActiveGame(true);
+            };
+
+            // 提交词语表单
+            document.getElementById('wordForm').onsubmit = (e) => {
+                e.preventDefault();
+                const wordInput = document.getElementById('inputWord');
+                const word = wordInput.value.trim();
+                if (!word) return;
+
+                sound.playClick();
+                state.myWord = word;
+                document.getElementById('btnSubmitWord').disabled = true;
+                document.getElementById('btnSubmitWord').innerText = '已锁定等待中...';
+                document.getElementById('btnSubmitWord').className = 'bg-slate-700 text-slate-400 font-bold px-8 py-3 rounded-xl text-base cursor-not-allowed';
+
+                // 更新本地视图
+                document.getElementById('myStatusIcon').innerText = '🔒';
+                document.getElementById('myStatusText').innerText = '答案已锁定！';
+
+                sendNetworkData('SUBMIT_WORD', { word });
+
+                // 单人/AI试玩模式下自动模拟好友回答
+                if (state.peerName === 'AI 灵犀伴侣' && !state.peerWord) {
+                    setTimeout(() => {
+                        let aiWords = ["西瓜", "冰淇淋", "大海", "空调", "游泳"];
+                        if (state.isBridgeRound) {
+                            aiWords = ["冰棒", "水乐园", "解暑"];
+                        }
+                        const randomAiWord = aiWords[Math.floor(Math.random() * aiWords.length)];
+                        state.peerWord = randomAiWord;
+                        updatePeerStatusSubmitted();
+                        checkBothSubmitted();
+                    }, 1200);
+                }
+
+                checkBothSubmitted();
+            };
+
+            // 互动表情发弹
+            document.querySelectorAll('.emote-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const emote = btn.innerText;
+                    sound.playClick();
+                    showEmoteBubble(true, emote);
+                    sendNetworkData('EMOTE', { emote });
+                };
+            });
+
+            // 默契历史记录弹窗
+            document.getElementById('btnToggleHistory').onclick = () => {
+                sound.playClick();
+                document.getElementById('modalHistory').classList.remove('hidden');
+            };
+            document.getElementById('btnCloseHistory').onclick = () => {
+                sound.playClick();
+                document.getElementById('modalHistory').classList.add('hidden');
+            };
+        }
+
+        function showScreen(screenId) {
+            ['screenLobby', 'screenWaiting', 'screenGame'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function updateWaitingRoomUI() {
+            document.getElementById('roomBadge').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = state.roomCode;
+            document.getElementById('shareCodeText').innerText = state.roomCode;
+            
+            document.getElementById('myAvatarDisplay').innerText = state.myAvatar;
+            document.getElementById('myNameDisplay').innerText = state.myName;
+            
+            if (!state.isHost) {
+                document.getElementById('categorySection').classList.add('opacity-40', 'pointer-events-none');
+                document.getElementById('btnStartGame').innerText = '等待房主发起游戏...';
+            }
+        }
+
+        function updateLobbyUIConnected() {
+            document.getElementById('peerAvatarDisplay').innerText = state.peerAvatar;
+            document.getElementById('peerNameDisplay').innerText = state.peerName;
+            document.getElementById('peerNameDisplay').classList.remove('text-slate-400');
+            document.getElementById('peerNameDisplay').classList.add('text-slate-200');
+
+            const tag = document.getElementById('peerStatusTag');
+            tag.innerText = '已就绪';
+            tag.className = 'text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30';
+
+            if (state.isHost) {
+                const btn = document.getElementById('btnStartGame');
+                btn.disabled = false;
+                btn.innerText = '开启默契之旅 🚀';
+                btn.className = 'w-full glow-btn-pink font-fun font-bold py-4 px-6 rounded-2xl text-xl text-white shadow-lg cursor-pointer transition';
+            }
+        }
+
+        /* ==========================================================================
+           6. 游戏核心回合控制
+           ========================================================================== */
+        function startActiveGame(isInitiator) {
+            showScreen('screenGame');
+            state.roundCount = 1;
+            state.matchCount = 0;
+            state.streak = 0;
+            state.history = [];
+
+            // 更新 HUD 头部
+            document.getElementById('hudMyAvatar').innerText = state.myAvatar;
+            document.getElementById('hudMyName').innerText = state.myName;
+            document.getElementById('hudPeerAvatar').innerText = state.peerAvatar;
+            document.getElementById('hudPeerName').innerText = state.peerName;
+            updateHUDStats();
+
+            setupRoundView();
+        }
+
+        function setupRoundView() {
+            state.myWord = '';
+            state.peerWord = null;
+
+            // 重置输入与卡片状态
+            document.getElementById('inputWord').value = '';
+            document.getElementById('btnSubmitWord').disabled = false;
+            document.getElementById('btnSubmitWord').innerText = '锁定提交 🔒';
+            document.getElementById('btnSubmitWord').className = 'glow-btn-pink font-bold px-8 py-3 rounded-xl text-white text-base transition';
+
+            document.getElementById('myCardInner').classList.remove('card-flipped');
+            document.getElementById('peerCardInner').classList.remove('card-flipped');
+
+            document.getElementById('myStatusIcon').innerText = '✍️';
+            document.getElementById('myStatusText').innerText = '正在思考答案...';
+
+            document.getElementById('peerStatusIcon').innerText = '⏳';
+            document.getElementById('peerStatusText').innerText = '等待对方作答...';
+
+            document.getElementById('hudRoundText').innerText = `第 ${state.roundCount} 轮大考验`;
+
+            // 处理桥梁回合UI展示
+            if (state.isBridgeRound) {
+                document.getElementById('bridgeBadge').classList.remove('hidden');
+                document.getElementById('promptCategoryTag').innerText = '【桥梁回合】寻找交集联想';
+                document.getElementById('displayPrompt').innerText = `如何将这两个词建立联系？`;
+                
+                document.getElementById('bridgePreviousWords').classList.remove('hidden');
+                document.getElementById('prevWord1').innerText = `“${state.prevWord1}”`;
+                document.getElementById('prevWord2').innerText = `“${state.prevWord2}”`;
+            } else {
+                document.getElementById('bridgeBadge').classList.add('hidden');
+                document.getElementById('bridgePreviousWords').classList.add('hidden');
+                document.getElementById('promptCategoryTag').innerText = `【${getCategoryName(state.category)}】题目`;
+                document.getElementById('displayPrompt').innerText = `“${state.currentPrompt}”`;
+            }
+        }
+
+        function getCategoryName(catKey) {
+            const map = { classic: '经典生活', creative: '脑洞大开', pop: '流行文化', custom: '自定义' };
+            return map[catKey] || '经典生活';
+        }
+
+        function updatePeerStatusSubmitted() {
+            document.getElementById('peerStatusIcon').innerText = '🔒';
+            document.getElementById('peerStatusText').innerText = '好友已回答！';
+        }
+
+        function checkBothSubmitted() {
+            if (state.myWord && state.peerWord) {
+                setTimeout(() => revealAnswers(), 600);
+            }
+        }
+
+        /* ==========================================================================
+           7. 揭晓答案与默契计算
+           ========================================================================== */
+        function revealAnswers() {
+            sound.playReveal();
+
+            document.getElementById('myRevealedWord').innerText = state.myWord;
+            document.getElementById('peerRevealedWord').innerText = state.peerWord;
+
+            // 翻牌动画
+            document.getElementById('myCardInner').classList.add('card-flipped');
+            document.getElementById('peerCardInner').classList.add('card-flipped');
+
+            // 判断是否同词/完全匹配 (去除空格大小写影响)
+            const w1 = state.myWord.trim().toLowerCase();
+            const w2 = state.peerWord.trim().toLowerCase();
+            const isMatch = (w1 === w2);
+
+            setTimeout(() => {
+                if (isMatch) {
+                    handleMatchSuccess();
+                } else {
+                    handleMatchMiss();
+                }
+            }, 900);
+        }
+
+        function handleMatchSuccess() {
+            sound.playSuccessFanfare();
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+
+            state.matchCount++;
+            state.streak++;
+            updateHUDStats();
+
+            addHistoryRecord(true, state.myWord, state.peerWord);
+
+            alert(`🎉 心有灵犀！你们都想到了“${state.myWord}”！默契连击 +1！`);
+
+            // 准备下一轮全新的题目
+            setTimeout(() => advanceToNextRound(false), 1500);
+        }
+
+        function handleMatchMiss() {
+            sound.playMissBuzzer();
+
+            state.streak = 0; // 重置连击
+            updateHUDStats();
+
+            addHistoryRecord(false, state.myWord, state.peerWord);
+
+            // 开启“桥梁回合”：要求下一轮将这两词作为提示词建立联想
+            alert(`😅 哎呀没对上！你选了“${state.myWord}”，好友选了“${state.peerWord}”。开启【桥梁回合】，试试找它俩之间的交集词！`);
+
+            setTimeout(() => advanceToNextRound(true, state.myWord, state.peerWord), 1500);
+        }
+
+        function advanceToNextRound(isBridge, word1 = '', word2 = '') {
+            state.roundCount++;
+            state.isBridgeRound = isBridge;
+            state.prevWord1 = word1;
+            state.prevWord2 = word2;
+
+            if (state.isHost) {
+                // 如果不是桥梁回合，随机抽取新题目
+                if (!isBridge) {
+                    const list = PROMPT_DATABASE[state.category] || PROMPT_DATABASE['classic'];
+                    state.currentPrompt = list[Math.floor(Math.random() * list.length)];
+                }
+
+                sendNetworkData('NEXT_ROUND', {
+                    isBridgeRound: state.isBridgeRound,
+                    prompt: state.currentPrompt,
+                    prevWord1: state.prevWord1,
+                    prevWord2: state.prevWord2
+                });
+            }
+
+            setupRoundView();
+        }
+
+        function updateHUDStats() {
+            const rate = state.roundCount > 1 ? Math.round((state.matchCount / (state.roundCount - 1)) * 100) : 0;
+            document.getElementById('hudSyncScore').innerText = `默契度 ${rate}%`;
+            document.getElementById('hudStreak').innerText = state.streak;
+            document.getElementById('hudHistoryStats').innerText = `成功 ${state.matchCount} / ${state.roundCount - 1}`;
+        }
+
+        function addHistoryRecord(isMatch, word1, word2) {
+            const list = document.getElementById('historyList');
+            if (state.history.length === 0) list.innerHTML = '';
+
+            const item = document.createElement('div');
+            item.className = `p-3 rounded-xl flex items-center justify-between ${isMatch ? 'bg-emerald-950/50 border border-emerald-500/40 text-emerald-200' : 'bg-rose-950/40 border border-rose-500/30 text-rose-200'}`;
+            item.innerHTML = `
+                <div>
+                    <div class="font-bold text-[11px] text-slate-400">第 ${state.roundCount} 轮 ${isMatch ? '✨ 完美相遇' : '💔 未相遇'}</div>
+                    <div class="font-bold text-sm mt-0.5">${word1} <span class="text-xs opacity-60">VS</span> ${word2}</div>
+                </div>
+                <div class="text-base font-black">${isMatch ? '💖 匹配' : '未契合'}</div>
+            `;
+            list.prepend(item);
+            state.history.push({ isMatch, word1, word2 });
+        }
+
+        function showEmoteBubble(isSelf, emote) {
+            const target = isSelf ? document.getElementById('hudMyAvatar') : document.getElementById('hudPeerAvatar');
+            if (!target) return;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'fixed text-3xl animate-bounce z-50 pointer-events-none transition-all duration-1000';
+            const rect = target.getBoundingClientRect();
+            bubble.style.left = `${rect.left + 10}px`;
+            bubble.style.top = `${rect.top - 30}px`;
+            bubble.innerText = emote;
+            document.body.appendChild(bubble);
+
+            setTimeout(() => {
+                bubble.style.opacity = '0';
+                bubble.style.transform = 'translateY(-20px)';
+                setTimeout(() => document.body.removeChild(bubble), 1000);
+            }, 800);
+        }
+    </script>
+</body>
+</html>
