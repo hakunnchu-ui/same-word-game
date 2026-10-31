@@ -161,13 +161,13 @@
 
     <button class="btn" onclick="createRoom()">创建房间</button>
     <div style="margin: 0.8rem 0; color: var(--subtext); font-size: 0.9rem;">—— 或加入好友房间 ——</div>
-    <input type="text" id="room-input" placeholder="输入 6 位房间码" style="text-transform: uppercase;" />
+    <input type="text" id="room-input" placeholder="输入 3 位纯数字房间码" maxlength="3" style="letter-spacing: 2px;" />
     <button class="btn btn-secondary" onclick="joinRoom()">加入房间</button>
   </div>
 
   <!-- 2. 等待大厅 -->
   <div id="waiting-room" class="hidden">
-    <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899; font-size: 1.2rem;">-</b></div>
+    <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899; font-size: 1.3rem; letter-spacing: 2px;">-</b></div>
     <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">等待好友加入中（满人后自动进入游戏界面）...</p>
     
     <div id="player-list" class="grid-players"></div>
@@ -175,7 +175,7 @@
     <button class="btn btn-secondary" onclick="copyInviteLink()">复制邀请链接</button>
   </div>
 
-  <!-- 3. 游戏主界面（进入房间即隐藏大厅） -->
+  <!-- 3. 游戏主界面 -->
   <div id="game-room" class="hidden">
     <!-- 历史词语记录面板（一直显示） -->
     <div class="history-box" id="history-box">
@@ -183,56 +183,58 @@
       <div id="history-list" style="margin-top: 6px;">暂无记录</div>
     </div>
 
-    <div class="room-tag">第 <span id="round-num">1</span> 轮</div>
-
-    <!-- 房主出题区域 / 队员看题区域 -->
+    <!-- 房主出题区域（仅在整局游戏开始时设置一次） -->
     <div id="host-topic-section" class="hidden">
-      <p style="color: var(--subtext); margin-bottom: 6px; font-size: 0.9rem;">【房主出题】请输入本轮的类型/主题词：</p>
+      <p style="color: var(--subtext); margin-bottom: 6px; font-size: 0.9rem;">【房主出题】请设定本局的核心主题/类型词：</p>
       <input type="text" id="custom-topic-input" placeholder="例如：说到夏天，你第一个想到的词是？" />
-      <button class="btn" onclick="hostPublishTopic()">发布题目并开始</button>
+      <button class="btn" onclick="hostPublishTopic()">确认主题并开始游戏</button>
     </div>
 
     <div id="guest-topic-waiting" class="hidden" style="color: var(--subtext); margin-bottom: 1rem;">
-      正在等待房主出题中...
+      正在等待房主设定本局主题...
     </div>
 
-    <div class="topic-box hidden" id="current-topic-display">题目加载中...</div>
+    <!-- 游戏进行中的信息显示 -->
+    <div id="active-game-area" class="hidden">
+      <div class="room-tag">第 <span id="round-num">1</span> 轮</div>
+      <div class="topic-box" id="current-topic-display">主题：加载中...</div>
 
-    <!-- 词语输入界面 -->
-    <div id="input-section" class="hidden">
-      <input type="text" id="my-word" placeholder="输入你想到的词语..." />
-      <button class="btn" onclick="submitWord()">锁定并提交词语</button>
-    </div>
+      <!-- 词语输入界面 -->
+      <div id="input-section">
+        <input type="text" id="my-word" placeholder="输入你想到的词语..." />
+        <button class="btn" onclick="submitWord()">锁定并提交词语</button>
+      </div>
 
-    <!-- 提交后等待 -->
-    <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0; font-size: 1rem;">
-      已提交！正在等待其他玩家锁定词语...
-    </div>
+      <!-- 提交后等待 -->
+      <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0; font-size: 1rem;">
+        已提交！正在等待其他玩家锁定词语...
+      </div>
 
-    <!-- 揭晓与投票界面 -->
-    <div id="result-section" class="hidden">
-      <h3 style="margin-bottom: 0.5rem;" id="result-title">揭晓时刻</h3>
-      <div id="result-grid" class="grid-players"></div>
+      <!-- 揭晓与投票界面 -->
+      <div id="result-section" class="hidden">
+        <h3 style="margin-bottom: 0.5rem;" id="result-title">揭晓时刻</h3>
+        <div id="result-grid" class="grid-players"></div>
 
-      <!-- 投票区域 -->
-      <div id="voting-area" style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px;">
-        <p style="font-size: 0.9rem; margin-bottom: 8px; color: #a5b4fc;">大家觉得这轮算成功/有默契吗？（赞成票超过 50% 即算成功）</p>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-success" onclick="castVote(true)" id="vote-yes-btn">👍 算成功 (赞成)</button>
-          <button class="btn btn-secondary" onclick="castVote(false)" id="vote-no-btn">👎 算失败 (反对)</button>
+        <!-- 投票区域 -->
+        <div id="voting-area" style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px;">
+          <p style="font-size: 0.9rem; margin-bottom: 8px; color: #a5b4fc;">大家觉得这轮算成功/有默契吗？（赞成票超过 50% 即算成功）</p>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-success" onclick="castVote(true)" id="vote-yes-btn">👍 算成功 (赞成)</button>
+            <button class="btn btn-secondary" onclick="castVote(false)" id="vote-no-btn">👎 算失败 (反对)</button>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--subtext); margin-top: 8px;" id="vote-status-text">当前投票情况：0 票赞成 / 0 票反对</p>
         </div>
-        <p style="font-size: 0.8rem; color: var(--subtext); margin-top: 8px;" id="vote-status-text">当前投票情况：0 票赞成 / 0 票反对</p>
-      </div>
 
-      <!-- 房主决策下一局 -->
-      <div id="host-next-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-        <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主菜单】本轮已结算，您可以选择：</p>
-        <button class="btn" onclick="startNextRound()">开启下一局</button>
-        <button class="btn btn-secondary" onclick="endGame()">结束游戏</button>
-      </div>
+        <!-- 房主决策下一轮 -->
+        <div id="host-next-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+          <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主菜单】本轮已结算，您可以选择：</p>
+          <button class="btn" onclick="startNextRound()">开启下一轮</button>
+          <button class="btn btn-secondary" onclick="endGame()">结束游戏</button>
+        </div>
 
-      <div id="client-waiting-next" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
-        本轮已结束，等待房主开启下一局...
+        <div id="client-waiting-next" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
+          本轮已结束，等待房主开启下一轮...
+        </div>
       </div>
     </div>
   </div>
@@ -248,9 +250,9 @@
   let targetPlayers = 2;
   
   let currentRound = 1;
-  let playersData = {}; // id -> { name, word, ready, vote }
-  let historyRounds = []; // 历史记录
-  let currentTopicText = "";
+  let playersData = {}; 
+  let historyRounds = []; 
+  let globalTopic = "";
 
   window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -260,8 +262,9 @@
     }
   };
 
+  // 生成 3 位纯数字房间码 (100 - 999)
   function generateCode() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+    return Math.floor(100 + Math.random() * 900).toString();
   }
 
   // --- 创房 ---
@@ -298,15 +301,15 @@
       });
     });
 
-    peer.on('error', (err) => alert('创建房间失败: ' + err));
+    peer.on('error', (err) => alert('创建房间失败（数字房间码可能被占用，请重试）: ' + err));
   }
 
   // --- 加房 ---
   function joinRoom() {
     myName = document.getElementById('nickname').value.trim() || '玩家' + Math.floor(Math.random()*100);
-    const code = document.getElementById('room-input').value.trim().toUpperCase();
+    const code = document.getElementById('room-input').value.trim();
     
-    if (!code) return alert('请输入 6 位房间码！');
+    if (!code || code.length !== 3 || isNaN(code)) return alert('请输入有效的 3 位纯数字房间码！');
 
     peer = new Peer();
 
@@ -322,7 +325,7 @@
       hostConn.on('close', () => alert('与房主断开连接'));
     });
 
-    peer.on('error', (err) => alert('连接房间失败，请检查房间码！'));
+    peer.on('error', (err) => alert('连接房间失败，请检查 3 位房间码是否正确！'));
   }
 
   // --- 房主数据处理 ---
@@ -333,7 +336,6 @@
       broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
       updatePlayerList();
 
-      // 人数满自动进入游戏主界面
       if (Object.keys(playersData).length === targetPlayers) {
         setTimeout(enterGameMode, 800);
       }
@@ -364,9 +366,8 @@
       }
     } else if (data.type === 'ENTER_GAME') {
       enterGameMode();
-    } else if (data.type === 'START_TOPIC') {
-      currentTopicText = data.topic;
-      currentRound = data.round;
+    } else if (data.type === 'SET_TOPIC') {
+      globalTopic = data.topic;
       startRoundUI(data.topic, data.round);
     } else if (data.type === 'REVEAL') {
       showResults(data.players, data.voteStatus);
@@ -405,14 +406,12 @@
     alert('邀请链接已复制！快发给朋友吧。');
   }
 
-  // 进入游戏主界面（彻底隐藏大厅）
   function enterGameMode() {
     document.getElementById('waiting-room').classList.add('hidden');
     document.getElementById('game-room').classList.remove('hidden');
 
     if (isHost) {
       broadcast({ type: 'ENTER_GAME' });
-      // 房主开始出题
       showHostTopicInput();
     } else {
       document.getElementById('guest-topic-waiting').classList.remove('hidden');
@@ -422,29 +421,27 @@
   function showHostTopicInput() {
     document.getElementById('host-topic-section').classList.remove('hidden');
     document.getElementById('guest-topic-waiting').classList.add('hidden');
-    document.getElementById('current-topic-display').classList.add('hidden');
-    document.getElementById('input-section').classList.add('hidden');
-    document.getElementById('result-section').classList.add('hidden');
+    document.getElementById('active-game-area').classList.add('hidden');
   }
 
   function hostPublishTopic() {
     const topic = document.getElementById('custom-topic-input').value.trim();
-    if (!topic) return alert('请先输入本轮的主题/类型词！');
+    if (!topic) return alert('请先设定本局的核心主题！');
 
-    currentTopicText = topic;
-    broadcast({ type: 'START_TOPIC', topic, round: currentRound });
-    startRoundUI(topic, currentRound);
+    globalTopic = topic;
+    currentRound = 1;
+    broadcast({ type: 'SET_TOPIC', topic: globalTopic, round: currentRound });
+    startRoundUI(globalTopic, currentRound);
   }
 
   function startRoundUI(topic, round) {
     document.getElementById('host-topic-section').classList.add('hidden');
     document.getElementById('guest-topic-waiting').classList.add('hidden');
+    document.getElementById('active-game-area').classList.remove('hidden');
     
-    const topicEl = document.getElementById('current-topic-display');
-    topicEl.innerText = `主题：${topic}`;
-    topicEl.classList.remove('hidden');
-
+    document.getElementById('current-topic-display').innerText = `主题：${topic}`;
     document.getElementById('round-num').innerText = round;
+
     document.getElementById('input-section').classList.remove('hidden');
     document.getElementById('waiting-others').classList.add('hidden');
     document.getElementById('result-section').classList.add('hidden');
@@ -472,7 +469,6 @@
     
     const allReady = Object.values(playersData).every(p => p.ready);
     if (allReady) {
-      // 重置投票
       Object.keys(playersData).forEach(id => playersData[id].vote = null);
       broadcast({ type: 'REVEAL', players: playersData, voteStatus: getVoteStats() });
       showResults(playersData, getVoteStats());
@@ -493,7 +489,7 @@
     const grid = document.getElementById('result-grid');
     grid.innerHTML = '';
 
-    let roundWordsSummary = `第 ${currentRound} 轮 [${currentTopicText}]：`;
+    let roundWordsSummary = `第 ${currentRound} 轮：`;
 
     Object.values(data).forEach(p => {
       const card = document.createElement('div');
@@ -503,7 +499,6 @@
       roundWordsSummary += ` ${p.name}:${p.word} `;
     });
 
-    // 记录历史词语
     historyRounds.push(roundWordsSummary);
     updateHistoryUI();
 
@@ -532,7 +527,6 @@
     const textEl = document.getElementById('vote-status-text');
     textEl.innerText = `当前投票：${stats.yesCount} 票赞成 / ${stats.noCount} 票反对 (共 ${stats.total} 人)`;
 
-    // 检查是否所有人都投完票了
     const allVoted = Object.values(playersData).every(p => p.vote !== null);
     if (allVoted) {
       const titleEl = document.getElementById('result-title');
@@ -572,9 +566,9 @@
       playersData[id].vote = null;
     });
 
-    // 房主重新输入下一局主题
-    showHostTopicInput();
-    broadcast({ type: 'ENTER_GAME' }); // 通知客户端回到出题等待状态
+    // 沿用当前主题直接进入下一轮
+    broadcast({ type: 'SET_TOPIC', topic: globalTopic, round: currentRound });
+    startRoundUI(globalTopic, currentRound);
   }
 
   function endGame() {
