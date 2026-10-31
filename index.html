@@ -52,6 +52,8 @@ let hostConn = null;           // guest -> host
 let G = null, me = 0;          // latest public state & my index
 let myName = localStorage.getItem('tc_name') || '';
 let H = null;                  // host-only authoritative state
+let draft = '';                // 輸入框草稿，重繪時保留
+let draftRound = -1;
 
 /* ---------------- 首頁 ---------------- */
 function home(msg) {
@@ -268,6 +270,7 @@ function renderLobby() {
 function renderInput() {
   const meDone = G.players[me] && G.players[me].done;
   const last = G.history[G.history.length - 1];
+  if (draftRound !== G.round) { draft = ''; draftRound = G.round; }
   app.innerHTML = `
     <div class="round">第 ${G.round} 輪</div>
     ${last ? `<div class="card"><div class="hint" style="margin-top:0">上一輪大家的詞</div>${wordBoxes(last)}</div>` : ''}
@@ -285,9 +288,13 @@ function renderInput() {
     ${leaveBtn()}`;
   if (!meDone) {
     const inp = document.getElementById('word');
+    inp.value = draft;
+    inp.oninput = () => { draft = inp.value; };
     inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
     const submit = () => {
       const v = inp.value.trim(); if (!v) return;
+      draft = '';
       if (isHost) submitWord(0, v); else hostConn.send({t: 'word', w: v});
     };
     document.getElementById('ok').onclick = submit;
