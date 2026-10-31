@@ -9,9 +9,8 @@
   <style>
     :root {
       --primary: #6366f1;
-      --primary-hover: #4f46e5;
       --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-bg: rgba(30, 41, 59, 0.85);
       --accent: #ec4899;
       --text: #f8fafc;
       --subtext: #94a3b8;
@@ -29,7 +28,7 @@
     }
     .container {
       width: 100%;
-      max-width: 600px;
+      max-width: 650px;
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.1);
@@ -56,7 +55,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-      margin: 0.4rem;
+      margin: 0.4rem 0;
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
       width: 100%;
     }
@@ -67,7 +66,8 @@
       border: 1px solid rgba(255,255,255,0.2);
     }
     .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
-    input, select {
+    .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+    input, select, textarea {
       width: 100%;
       padding: 0.8rem 1rem;
       border-radius: 12px;
@@ -79,7 +79,7 @@
       outline: none;
       text-align: center;
     }
-    input:focus, select:focus { border-color: var(--primary); }
+    input:focus, textarea:focus { border-color: var(--primary); }
     select option { background: #0f172a; color: white; }
     .grid-players {
       display: grid;
@@ -97,7 +97,6 @@
       align-items: center;
     }
     .player-card.ready { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
-    .player-card .status { font-size: 0.8rem; color: var(--subtext); margin-top: 4px; }
     .word-badge {
       font-size: 1.2rem;
       font-weight: bold;
@@ -115,6 +114,18 @@
       font-size: 1.2rem;
       font-weight: bold;
       margin-bottom: 1.5rem;
+      color: #a5b4fc;
+    }
+    .history-box {
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      max-height: 150px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 0.9rem;
+      color: var(--subtext);
     }
     .hidden { display: none !important; }
     .room-tag {
@@ -157,69 +168,89 @@
   <!-- 2. 等待大厅 -->
   <div id="waiting-room" class="hidden">
     <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899; font-size: 1.2rem;">-</b></div>
-    <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">等待好友加入中（当前满人后自动开始）...</p>
+    <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">等待好友加入中（满人后自动进入游戏界面）...</p>
     
     <div id="player-list" class="grid-players"></div>
 
     <button class="btn btn-secondary" onclick="copyInviteLink()">复制邀请链接</button>
   </div>
 
-  <!-- 3. 游戏主要环节 -->
+  <!-- 3. 游戏主界面（进入房间即隐藏大厅） -->
   <div id="game-room" class="hidden">
+    <!-- 历史词语记录面板（一直显示） -->
+    <div class="history-box" id="history-box">
+      <b>📜 历史词语记录：</b>
+      <div id="history-list" style="margin-top: 6px;">暂无记录</div>
+    </div>
+
     <div class="room-tag">第 <span id="round-num">1</span> 轮</div>
-    <div class="topic-box" id="current-topic">准备中...</div>
+
+    <!-- 房主出题区域 / 队员看题区域 -->
+    <div id="host-topic-section" class="hidden">
+      <p style="color: var(--subtext); margin-bottom: 6px; font-size: 0.9rem;">【房主出题】请输入本轮的类型/主题词：</p>
+      <input type="text" id="custom-topic-input" placeholder="例如：说到夏天，你第一个想到的词是？" />
+      <button class="btn" onclick="hostPublishTopic()">发布题目并开始</button>
+    </div>
+
+    <div id="guest-topic-waiting" class="hidden" style="color: var(--subtext); margin-bottom: 1rem;">
+      正在等待房主出题中...
+    </div>
+
+    <div class="topic-box hidden" id="current-topic-display">题目加载中...</div>
 
     <!-- 词语输入界面 -->
-    <div id="input-section">
+    <div id="input-section" class="hidden">
       <input type="text" id="my-word" placeholder="输入你想到的词语..." />
       <button class="btn" onclick="submitWord()">锁定并提交词语</button>
     </div>
 
-    <!-- 提交后等待其他玩家 -->
+    <!-- 提交后等待 -->
     <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0; font-size: 1rem;">
       已提交！正在等待其他玩家锁定词语...
     </div>
 
-    <!-- 揭晓与决策界面 -->
+    <!-- 揭晓与投票界面 -->
     <div id="result-section" class="hidden">
-      <h3 style="margin-bottom: 1rem;" id="result-title">揭晓时刻</h3>
+      <h3 style="margin-bottom: 0.5rem;" id="result-title">揭晓时刻</h3>
       <div id="result-grid" class="grid-players"></div>
 
-      <!-- 房主决策按钮（若词不相同时显示） -->
-      <div id="host-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-        <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主决策】大家词语不全相同，请选择下一步：</p>
-        <button class="btn" onclick="nextRoundBridge()">继续下一轮（寻找交集桥梁）</button>
-        <button class="btn btn-secondary" onclick="endGame()">词相同 / 结束游戏结算</button>
+      <!-- 投票区域 -->
+      <div id="voting-area" style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px;">
+        <p style="font-size: 0.9rem; margin-bottom: 8px; color: #a5b4fc;">大家觉得这轮算成功/有默契吗？（赞成票超过 50% 即算成功）</p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-success" onclick="castVote(true)" id="vote-yes-btn">👍 算成功 (赞成)</button>
+          <button class="btn btn-secondary" onclick="castVote(false)" id="vote-no-btn">👎 算失败 (反对)</button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--subtext); margin-top: 8px;" id="vote-status-text">当前投票情况：0 票赞成 / 0 票反对</p>
       </div>
 
-      <div id="client-waiting-host" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
-        正在等待房主选择下一步操作...
+      <!-- 房主决策下一局 -->
+      <div id="host-next-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+        <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主菜单】本轮已结算，您可以选择：</p>
+        <button class="btn" onclick="startNextRound()">开启下一局</button>
+        <button class="btn btn-secondary" onclick="endGame()">结束游戏</button>
+      </div>
+
+      <div id="client-waiting-next" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
+        本轮已结束，等待房主开启下一局...
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  const TOPICS = [
-    "说到“夏天”，你第一个想到的词是？",
-    "说到“宵夜”，你最先想到的食物是？",
-    "说到“下雨天”，你会想到什么？",
-    "说到“假期”，你最想做的一件事是？",
-    "说到“红色”，你第一个联想到的物品是？",
-    "说到“动物园”，你第一个想看的动物是？"
-  ];
-
   let peer = null;
-  let connections = []; // 房主保存的所有客户端连接
-  let hostConn = null;  // 客户端保存的房主连接
+  let connections = []; 
+  let hostConn = null;  
   let isHost = false;
   let myName = "";
   let myId = "";
   let targetPlayers = 2;
   
   let currentRound = 1;
-  let playersData = {}; // id -> { name, word, ready }
-  let lastWords = [];
+  let playersData = {}; // id -> { name, word, ready, vote }
+  let historyRounds = []; // 历史记录
+  let currentTopicText = "";
 
   window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -244,7 +275,7 @@
     peer.on('open', (id) => {
       myId = id;
       isHost = true;
-      playersData[myId] = { name: myName, word: '', ready: true }; // 房主自动就绪
+      playersData[myId] = { name: myName, word: '', ready: true, vote: null };
 
       showWaitingRoom(code);
       updatePlayerList();
@@ -267,7 +298,7 @@
       });
     });
 
-    peer.on('error', (err) => alert('创建房间失败（可能房间码已被占用，请重试）: ' + err));
+    peer.on('error', (err) => alert('创建房间失败: ' + err));
   }
 
   // --- 加房 ---
@@ -297,14 +328,14 @@
   // --- 房主数据处理 ---
   function handleDataHost(conn, data) {
     if (data.type === 'JOIN') {
-      playersData[conn.peer] = { name: data.name, word: '', ready: false };
+      playersData[conn.peer] = { name: data.name, word: '', ready: false, vote: null };
       
       broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
       updatePlayerList();
 
-      // 人数满自动开始第一局
+      // 人数满自动进入游戏主界面
       if (Object.keys(playersData).length === targetPlayers) {
-        setTimeout(startGame, 800);
+        setTimeout(enterGameMode, 800);
       }
     } else if (data.type === 'SUBMIT_WORD') {
       playersData[conn.peer].word = data.word;
@@ -312,6 +343,9 @@
       
       broadcast({ type: 'PLAYERS_UPDATE', players: playersData });
       checkAllSubmitted();
+    } else if (data.type === 'CAST_VOTE') {
+      playersData[conn.peer].vote = data.vote;
+      checkAllVoted();
     }
   }
 
@@ -328,10 +362,14 @@
       if (!document.getElementById('waiting-room').classList.contains('hidden')) {
         updatePlayerList();
       }
-    } else if (data.type === 'START_GAME') {
-      enterGameRoom(data.topic, data.round);
+    } else if (data.type === 'ENTER_GAME') {
+      enterGameMode();
+    } else if (data.type === 'START_TOPIC') {
+      currentTopicText = data.topic;
+      currentRound = data.round;
+      startRoundUI(data.topic, data.round);
     } else if (data.type === 'REVEAL') {
-      showResults(data.words, data.allMatch);
+      showResults(data.players, data.voteStatus);
     } else if (data.type === 'END_GAME') {
       alert('游戏已由房主结束！');
       location.reload();
@@ -342,7 +380,6 @@
     connections.forEach(c => c.send(data));
   }
 
-  // --- UI 交互 ---
   function showWaitingRoom(code) {
     document.getElementById('lobby').classList.add('hidden');
     document.getElementById('waiting-room').classList.remove('hidden');
@@ -356,7 +393,7 @@
     Object.values(playersData).forEach(p => {
       const card = document.createElement('div');
       card.className = 'player-card ready';
-      card.innerHTML = `<strong>${p.name}</strong><span class="status">已加入 (${Object.keys(playersData).length}/${targetPlayers})</span>`;
+      card.innerHTML = `<strong>${p.name}</strong><span style="font-size:0.8rem; color:var(--subtext); margin-top:4px;">已加入 (${Object.keys(playersData).length}/${targetPlayers})</span>`;
       listEl.appendChild(card);
     });
   }
@@ -368,22 +405,46 @@
     alert('邀请链接已复制！快发给朋友吧。');
   }
 
-  // --- 游戏流程 ---
-  function startGame() {
-    const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-    currentRound = 1;
-    
-    broadcast({ type: 'START_GAME', topic, round: currentRound });
-    enterGameRoom(topic, currentRound);
-  }
-
-  function enterGameRoom(topic, round) {
+  // 进入游戏主界面（彻底隐藏大厅）
+  function enterGameMode() {
     document.getElementById('waiting-room').classList.add('hidden');
     document.getElementById('game-room').classList.remove('hidden');
+
+    if (isHost) {
+      broadcast({ type: 'ENTER_GAME' });
+      // 房主开始出题
+      showHostTopicInput();
+    } else {
+      document.getElementById('guest-topic-waiting').classList.remove('hidden');
+    }
+  }
+
+  function showHostTopicInput() {
+    document.getElementById('host-topic-section').classList.remove('hidden');
+    document.getElementById('guest-topic-waiting').classList.add('hidden');
+    document.getElementById('current-topic-display').classList.add('hidden');
+    document.getElementById('input-section').classList.add('hidden');
+    document.getElementById('result-section').classList.add('hidden');
+  }
+
+  function hostPublishTopic() {
+    const topic = document.getElementById('custom-topic-input').value.trim();
+    if (!topic) return alert('请先输入本轮的主题/类型词！');
+
+    currentTopicText = topic;
+    broadcast({ type: 'START_TOPIC', topic, round: currentRound });
+    startRoundUI(topic, currentRound);
+  }
+
+  function startRoundUI(topic, round) {
+    document.getElementById('host-topic-section').classList.add('hidden');
+    document.getElementById('guest-topic-waiting').classList.add('hidden');
     
+    const topicEl = document.getElementById('current-topic-display');
+    topicEl.innerText = `主题：${topic}`;
+    topicEl.classList.remove('hidden');
+
     document.getElementById('round-num').innerText = round;
-    document.getElementById('current-topic').innerText = topic;
-    
     document.getElementById('input-section').classList.remove('hidden');
     document.getElementById('waiting-others').classList.add('hidden');
     document.getElementById('result-section').classList.add('hidden');
@@ -411,69 +472,109 @@
     
     const allReady = Object.values(playersData).every(p => p.ready);
     if (allReady) {
-      const words = Object.values(playersData).map(p => p.word);
-      const firstWord = words[0];
-      // 检查是否所有人的词都完全相同 (忽略大小写)
-      const allMatch = words.every(w => w.toLowerCase() === firstWord.toLowerCase());
-
-      lastWords = words;
-
-      broadcast({ type: 'REVEAL', words: playersData, allMatch });
-      showResults(playersData, allMatch);
+      // 重置投票
+      Object.keys(playersData).forEach(id => playersData[id].vote = null);
+      broadcast({ type: 'REVEAL', players: playersData, voteStatus: getVoteStats() });
+      showResults(playersData, getVoteStats());
     }
   }
 
-  function showResults(data, allMatch) {
+  function getVoteStats() {
+    let total = Object.keys(playersData).length;
+    let yesCount = Object.values(playersData).filter(p => p.vote === true).length;
+    let noCount = Object.values(playersData).filter(p => p.vote === false).length;
+    return { total, yesCount, noCount };
+  }
+
+  function showResults(data, voteStatus) {
     document.getElementById('waiting-others').classList.add('hidden');
     document.getElementById('result-section').classList.remove('hidden');
 
     const grid = document.getElementById('result-grid');
     grid.innerHTML = '';
 
+    let roundWordsSummary = `第 ${currentRound} 轮 [${currentTopicText}]：`;
+
     Object.values(data).forEach(p => {
       const card = document.createElement('div');
       card.className = 'player-card ready';
       card.innerHTML = `<strong>${p.name}</strong><div class="word-badge">${p.word}</div>`;
       grid.appendChild(card);
+      roundWordsSummary += ` ${p.name}:${p.word} `;
     });
 
-    const titleEl = document.getElementById('result-title');
+    // 记录历史词语
+    historyRounds.push(roundWordsSummary);
+    updateHistoryUI();
 
-    if (allMatch) {
-      titleEl.innerText = "🎉 完美默契！所有人的词都一样！";
-      titleEl.style.color = "#10b981";
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      
-      document.getElementById('host-controls').classList.add('hidden');
-      document.getElementById('client-waiting-host').classList.add('hidden');
+    updateVoteUI(voteStatus);
+  }
+
+  function castVote(voteVal) {
+    if (isHost) {
+      playersData[myId].vote = voteVal;
+      checkAllVoted();
     } else {
-      titleEl.innerText = "🤔 词语不完全相同，挑战继续！";
-      titleEl.style.color = "#ec4899";
+      hostConn.send({ type: 'CAST_VOTE', vote: voteVal });
+    }
+    document.getElementById('vote-yes-btn').disabled = true;
+    document.getElementById('vote-no-btn').disabled = true;
+  }
+
+  function checkAllVoted() {
+    if (!isHost) return;
+    const stats = getVoteStats();
+    broadcast({ type: 'REVEAL', players: playersData, voteStatus: stats });
+    showResults(playersData, stats);
+  }
+
+  function updateVoteUI(stats) {
+    const textEl = document.getElementById('vote-status-text');
+    textEl.innerText = `当前投票：${stats.yesCount} 票赞成 / ${stats.noCount} 票反对 (共 ${stats.total} 人)`;
+
+    // 检查是否所有人都投完票了
+    const allVoted = Object.values(playersData).every(p => p.vote !== null);
+    if (allVoted) {
+      const titleEl = document.getElementById('result-title');
+      let success = stats.yesCount > (stats.total / 2);
+
+      if (success) {
+        titleEl.innerText = "🎉 投票通过！恭喜你们达成默契！";
+        titleEl.style.color = "#10b981";
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      } else {
+        titleEl.innerText = "😢 赞成票未过半，本轮挑战失败~";
+        titleEl.style.color = "#ec4899";
+      }
 
       if (isHost) {
-        document.getElementById('host-controls').classList.remove('hidden');
-        document.getElementById('client-waiting-host').classList.add('hidden');
+        document.getElementById('host-next-controls').classList.remove('hidden');
+        document.getElementById('client-waiting-next').classList.add('hidden');
       } else {
-        document.getElementById('host-controls').classList.add('hidden');
-        document.getElementById('client-waiting-host').classList.remove('hidden');
+        document.getElementById('host-next-controls').classList.add('hidden');
+        document.getElementById('client-waiting-next').classList.remove('hidden');
       }
     }
   }
 
-  function nextRoundBridge() {
+  function updateHistoryUI() {
+    const listEl = document.getElementById('history-list');
+    listEl.innerHTML = historyRounds.map(h => `<div>• ${h}</div>`).join('');
+  }
+
+  function startNextRound() {
     if (!isHost) return;
 
     currentRound++;
     Object.keys(playersData).forEach(id => {
       playersData[id].word = '';
       playersData[id].ready = false;
+      playersData[id].vote = null;
     });
 
-    const uniqueWords = [...new Set(lastWords)].join(' & ');
-    const nextTopic = `【桥梁回合】上一轮出现了：[${uniqueWords}]，请想一个词把它们连接起来！`;
-
-    broadcast({ type: 'START_GAME', topic: nextTopic, round: currentRound });
-    enterGameRoom(nextTopic, currentRound);
+    // 房主重新输入下一局主题
+    showHostTopicInput();
+    broadcast({ type: 'ENTER_GAME' }); // 通知客户端回到出题等待状态
   }
 
   function endGame() {
