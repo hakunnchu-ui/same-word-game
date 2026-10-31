@@ -58,6 +58,7 @@
       transition: all 0.2s;
       margin: 0.4rem;
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      width: 100%;
     }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4); }
     .btn-secondary {
@@ -78,7 +79,8 @@
       outline: none;
       text-align: center;
     }
-    input:focus { border-color: var(--primary); }
+    input:focus, select:focus { border-color: var(--primary); }
+    select option { background: #0f172a; color: white; }
     .grid-players {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -110,7 +112,7 @@
       border: 1px dashed var(--primary);
       padding: 1.2rem;
       border-radius: 16px;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: bold;
       margin-bottom: 1.5rem;
     }
@@ -129,14 +131,14 @@
 
 <div class="container">
   <h1>同词相遇</h1>
-  <p class="subtitle">2-6人异地点对点默契大考验</p>
+  <p class="subtitle">2-6人实时默契考验</p>
 
-  <!-- 1. 初始菜单 -->
+  <!-- 1. 初始大厅 -->
   <div id="lobby">
     <input type="text" id="nickname" placeholder="请输入你的玩家昵称" />
     
-    <div style="margin-bottom: 1.2rem; text-align: left;">
-      <label style="font-size: 0.9rem; color: var(--subtext); display: block; margin-bottom: 4px;">选择游戏人数：</label>
+    <div style="margin-bottom: 1rem; text-align: left;">
+      <label style="font-size: 0.85rem; color: var(--subtext); display: block; margin-bottom: 4px;">选择游戏人数（仅房主生效）：</label>
       <select id="max-players">
         <option value="2">2 人游戏</option>
         <option value="3">3 人游戏</option>
@@ -147,15 +149,15 @@
     </div>
 
     <button class="btn" onclick="createRoom()">创建房间</button>
-    <div style="margin: 1rem 0; color: var(--subtext);">—— 或 ——</div>
+    <div style="margin: 0.8rem 0; color: var(--subtext); font-size: 0.9rem;">—— 或加入好友房间 ——</div>
     <input type="text" id="room-input" placeholder="输入 6 位房间码" style="text-transform: uppercase;" />
     <button class="btn btn-secondary" onclick="joinRoom()">加入房间</button>
   </div>
 
   <!-- 2. 等待大厅 -->
   <div id="waiting-room" class="hidden">
-    <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899;">-</b></div>
-    <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">将房间码发给朋友，满人后自动开启游戏</p>
+    <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899; font-size: 1.2rem;">-</b></div>
+    <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">等待好友加入中（当前满人后自动开始）...</p>
     
     <div id="player-list" class="grid-players"></div>
 
@@ -170,28 +172,28 @@
     <!-- 词语输入界面 -->
     <div id="input-section">
       <input type="text" id="my-word" placeholder="输入你想到的词语..." />
-      <button class="btn" onclick="submitWord()">锁定并提交</button>
+      <button class="btn" onclick="submitWord()">锁定并提交词语</button>
     </div>
 
-    <!-- 提交后等待 -->
-    <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0;">
-      已提交！正在等待其他玩家锁定...
+    <!-- 提交后等待其他玩家 -->
+    <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0; font-size: 1rem;">
+      已提交！正在等待其他玩家锁定词语...
     </div>
 
-    <!-- 揭晓/决策界面 -->
+    <!-- 揭晓与决策界面 -->
     <div id="result-section" class="hidden">
       <h3 style="margin-bottom: 1rem;" id="result-title">揭晓时刻</h3>
       <div id="result-grid" class="grid-players"></div>
 
-      <!-- 房主决策按钮（词不相同时显示） -->
-      <div id="host-controls" class="hidden" style="margin-top: 1.5rem;">
-        <p style="color: var(--subtext); font-size: 0.9rem; margin-bottom: 0.8rem;">作为房主，请选择下一步：</p>
-        <button class="btn" onclick="nextRound(true)">继续下一轮（寻找交集桥梁）</button>
-        <button class="btn btn-secondary" onclick="endGame()">词相同 / 结束游戏</button>
+      <!-- 房主决策按钮（若词不相同时显示） -->
+      <div id="host-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+        <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主决策】大家词语不全相同，请选择下一步：</p>
+        <button class="btn" onclick="nextRoundBridge()">继续下一轮（寻找交集桥梁）</button>
+        <button class="btn btn-secondary" onclick="endGame()">词相同 / 结束游戏结算</button>
       </div>
 
-      <div id="client-waiting-host" class="hidden" style="color: var(--subtext); margin-top: 1rem;">
-        正在等待房主选择是否继续下一轮...
+      <div id="client-waiting-host" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
+        正在等待房主选择下一步操作...
       </div>
     </div>
   </div>
@@ -208,8 +210,8 @@
   ];
 
   let peer = null;
-  let connections = []; // 房主用的连接列表
-  let hostConn = null;  // 客户端用的房主连接
+  let connections = []; // 房主保存的所有客户端连接
+  let hostConn = null;  // 客户端保存的房主连接
   let isHost = false;
   let myName = "";
   let myId = "";
@@ -219,7 +221,6 @@
   let playersData = {}; // id -> { name, word, ready }
   let lastWords = [];
 
-  // 自动从URL填入房间码
   window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const room = urlParams.get('room');
@@ -232,9 +233,9 @@
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
-  // --- 创建房间 (Host) ---
+  // --- 创房 ---
   function createRoom() {
-    myName = document.getElementById('nickname').value.trim() || '玩家1';
+    myName = document.getElementById('nickname').value.trim() || '房主';
     targetPlayers = parseInt(document.getElementById('max-players').value);
     const code = generateCode();
     
@@ -243,7 +244,7 @@
     peer.on('open', (id) => {
       myId = id;
       isHost = true;
-      playersData[myId] = { name: myName, word: '', ready: false };
+      playersData[myId] = { name: myName, word: '', ready: true }; // 房主自动就绪
 
       showWaitingRoom(code);
       updatePlayerList();
@@ -262,19 +263,19 @@
       conn.on('close', () => {
         delete playersData[conn.peer];
         updatePlayerList();
-        broadcast({ type: 'PLAYERS_UPDATE', players: playersData });
+        broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
       });
     });
 
-    peer.on('error', (err) => alert('创建房间失败: ' + err));
+    peer.on('error', (err) => alert('创建房间失败（可能房间码已被占用，请重试）: ' + err));
   }
 
-  // --- 加入房间 (Client) ---
+  // --- 加房 ---
   function joinRoom() {
     myName = document.getElementById('nickname').value.trim() || '玩家' + Math.floor(Math.random()*100);
     const code = document.getElementById('room-input').value.trim().toUpperCase();
     
-    if (!code) return alert('请输入有效的房间码！');
+    if (!code) return alert('请输入 6 位房间码！');
 
     peer = new Peer();
 
@@ -290,21 +291,20 @@
       hostConn.on('close', () => alert('与房主断开连接'));
     });
 
-    peer.on('error', (err) => alert('连接失败，请检查房间码是否正确！'));
+    peer.on('error', (err) => alert('连接房间失败，请检查房间码！'));
   }
 
-  // --- 房主逻辑消息处理 ---
+  // --- 房主数据处理 ---
   function handleDataHost(conn, data) {
     if (data.type === 'JOIN') {
       playersData[conn.peer] = { name: data.name, word: '', ready: false };
       
-      // 广播最新玩家列表
       broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
       updatePlayerList();
 
-      // 如果人满了，自动开始游戏
+      // 人数满自动开始第一局
       if (Object.keys(playersData).length === targetPlayers) {
-        setTimeout(startGame, 1000);
+        setTimeout(startGame, 800);
       }
     } else if (data.type === 'SUBMIT_WORD') {
       playersData[conn.peer].word = data.word;
@@ -315,10 +315,10 @@
     }
   }
 
-  // --- 客户端逻辑消息处理 ---
+  // --- 客户端数据处理 ---
   function handleDataClient(data) {
     if (data.type === 'FULL') {
-      alert('房间已满！');
+      alert('对不起，该房间人数已满！');
       return;
     }
     if (data.type === 'PLAYERS_UPDATE') {
@@ -333,7 +333,7 @@
     } else if (data.type === 'REVEAL') {
       showResults(data.words, data.allMatch);
     } else if (data.type === 'END_GAME') {
-      alert('游戏结束！大家辛苦啦~');
+      alert('游戏已由房主结束！');
       location.reload();
     }
   }
@@ -342,7 +342,7 @@
     connections.forEach(c => c.send(data));
   }
 
-  // --- 界面更新辅助函数 ---
+  // --- UI 交互 ---
   function showWaitingRoom(code) {
     document.getElementById('lobby').classList.add('hidden');
     document.getElementById('waiting-room').classList.remove('hidden');
@@ -355,8 +355,8 @@
     
     Object.values(playersData).forEach(p => {
       const card = document.createElement('div');
-      card.className = 'player-card';
-      card.innerHTML = `<strong>${p.name}</strong><span class="status">已就绪</span>`;
+      card.className = 'player-card ready';
+      card.innerHTML = `<strong>${p.name}</strong><span class="status">已加入 (${Object.keys(playersData).length}/${targetPlayers})</span>`;
       listEl.appendChild(card);
     });
   }
@@ -365,10 +365,10 @@
     const code = document.getElementById('room-code-display').innerText;
     const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
     navigator.clipboard.writeText(url);
-    alert('邀请链接已复制到剪贴板！');
+    alert('邀请链接已复制！快发给朋友吧。');
   }
 
-  // --- 游戏主流程 ---
+  // --- 游戏流程 ---
   function startGame() {
     const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
     currentRound = 1;
@@ -413,6 +413,7 @@
     if (allReady) {
       const words = Object.values(playersData).map(p => p.word);
       const firstWord = words[0];
+      // 检查是否所有人的词都完全相同 (忽略大小写)
       const allMatch = words.every(w => w.toLowerCase() === firstWord.toLowerCase());
 
       lastWords = words;
@@ -439,14 +440,14 @@
     const titleEl = document.getElementById('result-title');
 
     if (allMatch) {
-      titleEl.innerText = "🎉 默契达成！心有灵犀！";
+      titleEl.innerText = "🎉 完美默契！所有人的词都一样！";
       titleEl.style.color = "#10b981";
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       
       document.getElementById('host-controls').classList.add('hidden');
       document.getElementById('client-waiting-host').classList.add('hidden');
     } else {
-      titleEl.innerText = "🤔 词语不同，继续加油！";
+      titleEl.innerText = "🤔 词语不完全相同，挑战继续！";
       titleEl.style.color = "#ec4899";
 
       if (isHost) {
@@ -459,19 +460,17 @@
     }
   }
 
-  function nextRound(manual = false) {
+  function nextRoundBridge() {
     if (!isHost) return;
 
     currentRound++;
-    // 清空上一轮答案
     Object.keys(playersData).forEach(id => {
       playersData[id].word = '';
       playersData[id].ready = false;
     });
 
-    // 组合上一轮出现的不同词作为桥梁提示
     const uniqueWords = [...new Set(lastWords)].join(' & ');
-    const nextTopic = `寻找交集桥梁：想出一个能把【${uniqueWords}】连接起来的词！`;
+    const nextTopic = `【桥梁回合】上一轮出现了：[${uniqueWords}]，请想一个词把它们连接起来！`;
 
     broadcast({ type: 'START_GAME', topic: nextTopic, round: currentRound });
     enterGameRoom(nextTopic, currentRound);
@@ -480,7 +479,7 @@
   function endGame() {
     if (!isHost) return;
     broadcast({ type: 'END_GAME' });
-    alert('游戏结束！回到主界面');
+    alert('游戏已结束！');
     location.reload();
   }
 </script>
