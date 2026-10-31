@@ -1,582 +1,329 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>同词相遇 - 2-6人实时默契考验</title>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <style>
-    :root {
-      --primary: #6366f1;
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.85);
-      --accent: #ec4899;
-      --text: #f8fafc;
-      --subtext: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body {
-      background: radial-gradient(circle at top, #1e1b4b, var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .container {
-      width: 100%;
-      max-width: 650px;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      padding: 2rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-      text-align: center;
-    }
-    h1 {
-      font-size: 2.2rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #a5b4fc, #ec4899);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    p.subtitle { color: var(--subtext); margin-bottom: 1.5rem; font-size: 0.95rem; }
-    .btn {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: white;
-      border: none;
-      padding: 0.8rem 1.6rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin: 0.4rem 0;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-      width: 100%;
-    }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4); }
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: none;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
-    .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-    input, select, textarea {
-      width: 100%;
-      padding: 0.8rem 1rem;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(15, 23, 42, 0.6);
-      color: white;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      outline: none;
-      text-align: center;
-    }
-    input:focus, textarea:focus { border-color: var(--primary); }
-    select option { background: #0f172a; color: white; }
-    .grid-players {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin: 1.5rem 0;
-    }
-    .player-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 1rem;
-      border-radius: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .player-card.ready { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
-    .word-badge {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      margin-top: 8px;
-    }
-    .topic-box {
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px dashed var(--primary);
-      padding: 1.2rem;
-      border-radius: 16px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 1.5rem;
-      color: #a5b4fc;
-    }
-    .history-box {
-      background: rgba(0,0,0,0.2);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      max-height: 150px;
-      overflow-y: auto;
-      text-align: left;
-      font-size: 0.9rem;
-      color: var(--subtext);
-    }
-    .hidden { display: none !important; }
-    .room-tag {
-      display: inline-block;
-      background: rgba(255,255,255,0.1);
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>同詞相遇</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  :root{--bg:#14161f;--card:#1f2333;--ink:#f1f3fa;--mute:#8a90a8;--accent:#ffb347;--ok:#4ade80;--line:#2f3550}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;display:flex;justify-content:center;padding:20px}
+  #app{width:100%;max-width:460px}
+  h1{text-align:center;font-size:2rem;margin:10px 0 4px;letter-spacing:.2em}
+  .sub{text-align:center;color:var(--mute);margin-bottom:20px;font-size:.95rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .rules{color:var(--mute);font-size:.9rem;line-height:1.7;padding-left:1.2em;margin:0}
+  label{display:block;margin-bottom:10px;color:var(--mute);font-size:.9rem}
+  input{width:100%;padding:13px;font-size:1.1rem;border-radius:10px;border:1px solid var(--line);background:#161a28;color:var(--ink);margin-bottom:10px;outline:none}
+  input:focus{border-color:var(--accent)}
+  .btn{width:100%;padding:15px;font-size:1.1rem;font-weight:700;border:0;border-radius:12px;background:var(--accent);color:#1a1200;cursor:pointer;margin-bottom:10px}
+  .btn.ghost{background:#2a3050;color:var(--ink)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .round{text-align:center;color:var(--mute);margin-bottom:10px}
+  .words{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0}
+  .w{padding:10px 16px;border-radius:12px;background:#2a3050;text-align:center;min-width:90px}
+  .w small{display:block;color:var(--mute);font-size:.75rem;margin-bottom:2px}
+  .w b{font-size:1.3rem;word-break:break-all}
+  .w.match{background:#14532d;outline:2px solid var(--ok)}
+  .hist{font-size:.85rem;color:var(--mute);line-height:1.8}
+  .hist div{border-top:1px solid var(--line);padding:6px 0}
+  .win{text-align:center;font-size:2.4rem;margin:10px 0}
+  .hint{text-align:center;color:var(--mute);font-size:.9rem;margin:8px 0}
+  .code{text-align:center;font-size:2.6rem;font-weight:800;letter-spacing:.3em;color:var(--accent);margin:6px 0 2px}
+  .plist .p{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line)}
+  .plist .p:first-child{border-top:0}
+  .tag{color:var(--mute);font-size:.85rem}
+  .tag.ok{color:var(--ok)}
+  .err{color:#ff7b7b;text-align:center;min-height:1.4em;font-size:.9rem}
+</style>
 </head>
 <body>
-
-<div class="container">
-  <h1>同词相遇</h1>
-  <p class="subtitle">2-6人实时默契考验</p>
-
-  <!-- 1. 初始大厅 -->
-  <div id="lobby">
-    <input type="text" id="nickname" placeholder="请输入你的玩家昵称" />
-    
-    <div style="margin-bottom: 1rem; text-align: left;">
-      <label style="font-size: 0.85rem; color: var(--subtext); display: block; margin-bottom: 4px;">选择游戏人数（仅房主生效）：</label>
-      <select id="max-players">
-        <option value="2">2 人游戏</option>
-        <option value="3">3 人游戏</option>
-        <option value="4">4 人游戏</option>
-        <option value="5">5 人游戏</option>
-        <option value="6">6 人游戏</option>
-      </select>
-    </div>
-
-    <button class="btn" onclick="createRoom()">创建房间</button>
-    <div style="margin: 0.8rem 0; color: var(--subtext); font-size: 0.9rem;">—— 或加入好友房间 ——</div>
-    <input type="text" id="room-input" placeholder="输入 3 位纯数字房间码" maxlength="3" style="letter-spacing: 2px;" />
-    <button class="btn btn-secondary" onclick="joinRoom()">加入房间</button>
-  </div>
-
-  <!-- 2. 等待大厅 -->
-  <div id="waiting-room" class="hidden">
-    <div class="room-tag">房间码: <b id="room-code-display" style="color:#ec4899; font-size: 1.3rem; letter-spacing: 2px;">-</b></div>
-    <p style="color:var(--subtext); font-size: 0.9rem; margin-bottom: 1rem;">等待好友加入中（满人后自动进入游戏界面）...</p>
-    
-    <div id="player-list" class="grid-players"></div>
-
-    <button class="btn btn-secondary" onclick="copyInviteLink()">复制邀请链接</button>
-  </div>
-
-  <!-- 3. 游戏主界面 -->
-  <div id="game-room" class="hidden">
-    <!-- 历史词语记录面板（一直显示） -->
-    <div class="history-box" id="history-box">
-      <b>📜 历史词语记录：</b>
-      <div id="history-list" style="margin-top: 6px;">暂无记录</div>
-    </div>
-
-    <!-- 房主出题区域（仅在整局游戏开始时设置一次） -->
-    <div id="host-topic-section" class="hidden">
-      <p style="color: var(--subtext); margin-bottom: 6px; font-size: 0.9rem;">【房主出题】请设定本局的核心主题/类型词：</p>
-      <input type="text" id="custom-topic-input" placeholder="例如：说到夏天，你第一个想到的词是？" />
-      <button class="btn" onclick="hostPublishTopic()">确认主题并开始游戏</button>
-    </div>
-
-    <div id="guest-topic-waiting" class="hidden" style="color: var(--subtext); margin-bottom: 1rem;">
-      正在等待房主设定本局主题...
-    </div>
-
-    <!-- 游戏进行中的信息显示 -->
-    <div id="active-game-area" class="hidden">
-      <div class="room-tag">第 <span id="round-num">1</span> 轮</div>
-      <div class="topic-box" id="current-topic-display">主题：加载中...</div>
-
-      <!-- 词语输入界面 -->
-      <div id="input-section">
-        <input type="text" id="my-word" placeholder="输入你想到的词语..." />
-        <button class="btn" onclick="submitWord()">锁定并提交词语</button>
-      </div>
-
-      <!-- 提交后等待 -->
-      <div id="waiting-others" class="hidden" style="color: var(--subtext); margin: 1.5rem 0; font-size: 1rem;">
-        已提交！正在等待其他玩家锁定词语...
-      </div>
-
-      <!-- 揭晓与投票界面 -->
-      <div id="result-section" class="hidden">
-        <h3 style="margin-bottom: 0.5rem;" id="result-title">揭晓时刻</h3>
-        <div id="result-grid" class="grid-players"></div>
-
-        <!-- 投票区域 -->
-        <div id="voting-area" style="margin-top: 1.5rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px;">
-          <p style="font-size: 0.9rem; margin-bottom: 8px; color: #a5b4fc;">大家觉得这轮算成功/有默契吗？（赞成票超过 50% 即算成功）</p>
-          <div style="display: flex; gap: 10px;">
-            <button class="btn btn-success" onclick="castVote(true)" id="vote-yes-btn">👍 算成功 (赞成)</button>
-            <button class="btn btn-secondary" onclick="castVote(false)" id="vote-no-btn">👎 算失败 (反对)</button>
-          </div>
-          <p style="font-size: 0.8rem; color: var(--subtext); margin-top: 8px;" id="vote-status-text">当前投票情况：0 票赞成 / 0 票反对</p>
-        </div>
-
-        <!-- 房主决策下一轮 -->
-        <div id="host-next-controls" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-          <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 0.8rem;">【房主菜单】本轮已结算，您可以选择：</p>
-          <button class="btn" onclick="startNextRound()">开启下一轮</button>
-          <button class="btn btn-secondary" onclick="endGame()">结束游戏</button>
-        </div>
-
-        <div id="client-waiting-next" class="hidden" style="color: var(--subtext); margin-top: 1rem; font-size: 0.9rem;">
-          本轮已结束，等待房主开启下一轮...
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<div id="app"></div>
 <script>
-  let peer = null;
-  let connections = []; 
-  let hostConn = null;  
-  let isHost = false;
-  let myName = "";
-  let myId = "";
-  let targetPlayers = 2;
-  
-  let currentRound = 1;
-  let playersData = {}; 
-  let historyRounds = []; 
-  let globalTopic = "";
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => s.trim().toLowerCase().replace(/\s+/g, '');
+const PREFIX = 'tongci-meld-';
+const MAX = 6, MIN = 2;
 
-  window.onload = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const room = urlParams.get('room');
-    if (room) {
-      document.getElementById('room-input').value = room;
-    }
+let peer = null, isHost = false, roomCode = '';
+let hostConn = null;           // guest -> host
+let G = null, me = 0;          // latest public state & my index
+let myName = localStorage.getItem('tc_name') || '';
+let H = null;                  // host-only authoritative state
+
+/* ---------------- 首頁 ---------------- */
+function home(msg) {
+  const preset = (new URLSearchParams(location.search).get('room') || '').toUpperCase();
+  app.innerHTML = `
+    <h1>同詞相遇</h1>
+    <div class="sub">Mind Meld · 2~6 人 · 線上連線</div>
+    <div class="card"><ol class="rules">
+      <li>每人心裡想一個詞，同時偷偷提交。</li>
+      <li>全員提交後一起揭曉。</li>
+      <li>詞不同？就想一個<b>「介於大家的詞之間」</b>的新詞，再來一輪。</li>
+      <li>直到所有人寫出同一個詞，輪數越少越厲害！</li>
+    </ol></div>
+    <div class="card">
+      <label>你的名字</label>
+      <input id="name" maxlength="8" placeholder="暱稱" value="${esc(myName)}">
+      <button class="btn" id="create">建立房間</button>
+      <label style="margin-top:6px">或輸入朋友給你的房間碼</label>
+      <input id="code" maxlength="4" placeholder="例如 K7QP" value="${esc(preset)}" style="text-transform:uppercase;letter-spacing:.2em;text-align:center">
+      <button class="btn ghost" id="join">加入房間</button>
+      <div class="err" id="err">${msg ? esc(msg) : ''}</div>
+    </div>`;
+  const getName = () => {
+    const n = document.getElementById('name').value.trim();
+    if (!n) { document.getElementById('err').textContent = '請先輸入名字'; return null; }
+    myName = n; localStorage.setItem('tc_name', n); return n;
   };
+  document.getElementById('create').onclick = () => { const n = getName(); if (n) createRoom(n); };
+  document.getElementById('join').onclick = () => {
+    const n = getName(); if (!n) return;
+    const c = document.getElementById('code').value.trim().toUpperCase();
+    if (c.length !== 4) { document.getElementById('err').textContent = '房間碼是 4 個字元'; return; }
+    joinRoom(n, c);
+  };
+}
 
-  // 生成 3 位纯数字房间码 (100 - 999)
-  function generateCode() {
-    return Math.floor(100 + Math.random() * 900).toString();
+function setErr(t) { const e = document.getElementById('err'); if (e) e.textContent = t; }
+function cleanup() { try { peer && peer.destroy(); } catch (e) {} peer = null; hostConn = null; H = null; G = null; isHost = false; }
+function randCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+/* ---------------- 房主 ---------------- */
+function createRoom(name, tries = 0) {
+  cleanup();
+  setErr('建立中…');
+  roomCode = randCode();
+  isHost = true;
+  peer = new Peer(PREFIX + roomCode);
+  peer.on('open', () => {
+    H = { players: [{conn: null, name}], phase: 'lobby', round: 1, words: [], history: [] };
+    me = 0;
+    broadcast();
+  });
+  peer.on('connection', conn => {
+    conn.on('data', msg => hostOnMessage(conn, msg));
+    conn.on('close', () => hostOnLeave(conn));
+    conn.on('error', () => hostOnLeave(conn));
+  });
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id' && tries < 5) return createRoom(name, tries + 1);
+    cleanup(); home('連線失敗：' + err.type);
+  });
+}
+
+function pub() {
+  return {
+    phase: H.phase, round: H.round, code: roomCode,
+    players: H.players.map((p, i) => ({name: p.name, done: H.words[i] != null})),
+    history: H.history
+  };
+}
+function broadcast() {
+  const s = pub();
+  H.players.forEach((p, i) => {
+    if (p.conn) { try { p.conn.send({t: 'state', s, you: i}); } catch (e) {} }
+  });
+  G = s; me = 0; render();
+}
+
+function hostOnMessage(conn, msg) {
+  if (!msg) return;
+  if (msg.t === 'join') {
+    if (H.players.some(p => p.conn === conn)) return;
+    if (H.phase !== 'lobby') { conn.send({t: 'reject', why: '遊戲已經開始，無法加入'}); return; }
+    if (H.players.length >= MAX) { conn.send({t: 'reject', why: '房間已滿（最多 6 人）'}); return; }
+    H.players.push({conn, name: String(msg.name || '玩家').slice(0, 8)});
+    broadcast();
+  } else if (msg.t === 'word') {
+    const i = H.players.findIndex(p => p.conn === conn);
+    if (i < 0) return;
+    submitWord(i, String(msg.w || '').slice(0, 20));
   }
+}
 
-  // --- 创房 ---
-  function createRoom() {
-    myName = document.getElementById('nickname').value.trim() || '房主';
-    targetPlayers = parseInt(document.getElementById('max-players').value);
-    const code = generateCode();
-    
-    peer = new Peer('swg-' + code);
+function hostOnLeave(conn) {
+  const i = H && H.players.findIndex(p => p.conn === conn);
+  if (i == null || i < 0) return;
+  H.players.splice(i, 1);
+  if (H.phase !== 'lobby') {
+    H.words.splice(i, 1);
+    if (H.players.length < MIN) { resetToLobby(); }
+    else if (H.phase === 'input') checkComplete();
+  }
+  broadcast();
+}
 
-    peer.on('open', (id) => {
-      myId = id;
-      isHost = true;
-      playersData[myId] = { name: myName, word: '', ready: true, vote: null };
+function submitWord(i, w) {
+  if (!H || H.phase !== 'input' || H.words[i] != null || !w.trim()) return;
+  H.words[i] = w.trim();
+  checkComplete();
+  broadcast();
+}
 
-      showWaitingRoom(code);
-      updatePlayerList();
+function checkComplete() {
+  if (H.phase !== 'input' || H.words.some(w => w == null)) return;
+  H.history.push(H.players.map((p, i) => ({n: p.name, w: H.words[i]})));
+  const keys = H.words.map(norm);
+  H.phase = keys.every(k => k === keys[0]) ? 'win' : 'reveal';
+}
+
+function resetToLobby() { H.phase = 'lobby'; H.round = 1; H.words = []; H.history = []; }
+
+function hostStart() {
+  if (H.players.length < MIN) return;
+  H.phase = 'input'; H.round = 1; H.history = [];
+  H.words = Array(H.players.length).fill(null);
+  broadcast();
+}
+function hostNext() {
+  H.round++; H.phase = 'input';
+  H.words = Array(H.players.length).fill(null);
+  broadcast();
+}
+function hostRestart() { resetToLobby(); broadcast(); }
+
+/* ---------------- 訪客 ---------------- */
+function joinRoom(name, code, ) {
+  cleanup();
+  setErr('連線中…');
+  roomCode = code;
+  peer = new Peer();
+  let opened = false;
+  const timer = setTimeout(() => { if (!opened) { cleanup(); home('連線逾時，請確認房間碼或稍後再試'); } }, 15000);
+  peer.on('open', () => {
+    hostConn = peer.connect(PREFIX + code, {reliable: true});
+    hostConn.on('open', () => { opened = true; clearTimeout(timer); hostConn.send({t: 'join', name}); });
+    hostConn.on('data', msg => {
+      if (msg.t === 'state') { G = msg.s; me = msg.you; render(); }
+      else if (msg.t === 'reject') { cleanup(); home(msg.why); }
     });
+    hostConn.on('close', () => { if (G) { cleanup(); home('房主已離開，房間關閉'); } });
+  });
+  peer.on('error', err => {
+    clearTimeout(timer);
+    const m = err.type === 'peer-unavailable' ? '找不到這個房間' : '連線失敗：' + err.type;
+    cleanup(); home(m);
+  });
+}
 
-    peer.on('connection', (conn) => {
-      if (Object.keys(playersData).length >= targetPlayers) {
-        conn.send({ type: 'FULL' });
-        setTimeout(() => conn.close(), 500);
-        return;
-      }
+/* ---------------- 畫面 ---------------- */
+function histHTML(skipLast) {
+  const rows = skipLast ? G.history.slice(0, -1) : G.history;
+  if (!rows.length) return '';
+  return `<div class="card hist"><b style="color:var(--ink)">歷史回顧</b>` +
+    rows.map((r, i) => `<div>第 ${i + 1} 輪：` + r.map(x => `${esc(x.n)}「${esc(x.w)}」`).join('　') + `</div>`).join('') + `</div>`;
+}
+function wordBoxes(row) {
+  const keys = row.map(x => norm(x.w));
+  const cnt = {}; keys.forEach(k => cnt[k] = (cnt[k] || 0) + 1);
+  return `<div class="words">` + row.map((x, i) =>
+    `<div class="w ${cnt[keys[i]] > 1 ? 'match' : ''}"><small>${esc(x.n)}</small><b>${esc(x.w)}</b></div>`).join('') + `</div>`;
+}
+function leaveBtn() { return `<button class="btn ghost" id="leave">離開房間</button>`; }
+function bindLeave() {
+  const b = document.getElementById('leave');
+  if (b) b.onclick = () => { if (confirm('確定離開？')) { cleanup(); home(); } };
+}
 
-      connections.push(conn);
+function render() {
+  if (!G) return;
+  if (G.phase === 'lobby') return renderLobby();
+  if (G.phase === 'input') return renderInput();
+  if (G.phase === 'reveal') return renderReveal();
+  if (G.phase === 'win') return renderWin();
+}
 
-      conn.on('data', (data) => handleDataHost(conn, data));
-      conn.on('close', () => {
-        delete playersData[conn.peer];
-        updatePlayerList();
-        broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
-      });
-    });
+function renderLobby() {
+  const link = location.origin + location.pathname + '?room=' + G.code;
+  app.innerHTML = `
+    <h1>同詞相遇</h1>
+    <div class="card">
+      <div class="hint" style="margin-top:0">房間碼（分享給朋友）</div>
+      <div class="code">${esc(G.code)}</div>
+      <button class="btn ghost" id="copy" style="margin-top:14px">複製邀請連結</button>
+    </div>
+    <div class="card plist">
+      <label>玩家 ${G.players.length} / ${MAX}</label>
+      ${G.players.map((p, i) => `<div class="p"><span>${esc(p.name)}${i === me ? '（你）' : ''}</span><span class="tag">${i === 0 ? '房主' : ''}</span></div>`).join('')}
+    </div>
+    ${isHost
+      ? `<button class="btn" id="start" ${G.players.length < MIN ? 'disabled' : ''}>${G.players.length < MIN ? '至少需要 2 人' : '開始遊戲'}</button>`
+      : `<div class="hint">等待房主開始遊戲…</div>`}
+    ${leaveBtn()}`;
+  document.getElementById('copy').onclick = e => {
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(
+      () => e.target.textContent = '已複製 ✓', () => prompt('複製這個連結：', link));
+  };
+  if (isHost) document.getElementById('start').onclick = hostStart;
+  bindLeave();
+}
 
-    peer.on('error', (err) => alert('创建房间失败（数字房间码可能被占用，请重试）: ' + err));
+function renderInput() {
+  const meDone = G.players[me] && G.players[me].done;
+  const last = G.history[G.history.length - 1];
+  app.innerHTML = `
+    <div class="round">第 ${G.round} 輪</div>
+    ${last ? `<div class="card"><div class="hint" style="margin-top:0">上一輪大家的詞</div>${wordBoxes(last)}</div>` : ''}
+    <div class="card">
+      ${meDone
+        ? `<div class="hint" style="margin:0 0 10px">你已提交，等待其他人…</div>`
+        : `<label>${last ? '想一個介於上面所有詞之間的詞' : '第一輪：隨便想一個詞（越大眾越容易撞上）'}</label>
+           <input id="word" maxlength="20" autocomplete="off" placeholder="輸入你的詞">
+           <button class="btn" id="ok">提交</button>`}
+      <div class="plist">
+        ${G.players.map((p, i) => `<div class="p"><span>${esc(p.name)}${i === me ? '（你）' : ''}</span><span class="tag ${p.done ? 'ok' : ''}">${p.done ? '已提交 ✓' : '思考中…'}</span></div>`).join('')}
+      </div>
+    </div>
+    ${histHTML(true)}
+    ${leaveBtn()}`;
+  if (!meDone) {
+    const inp = document.getElementById('word');
+    inp.focus();
+    const submit = () => {
+      const v = inp.value.trim(); if (!v) return;
+      if (isHost) submitWord(0, v); else hostConn.send({t: 'word', w: v});
+    };
+    document.getElementById('ok').onclick = submit;
+    inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
   }
+  bindLeave();
+}
 
-  // --- 加房 ---
-  function joinRoom() {
-    myName = document.getElementById('nickname').value.trim() || '玩家' + Math.floor(Math.random()*100);
-    const code = document.getElementById('room-input').value.trim();
-    
-    if (!code || code.length !== 3 || isNaN(code)) return alert('请输入有效的 3 位纯数字房间码！');
+function renderReveal() {
+  const last = G.history[G.history.length - 1];
+  app.innerHTML = `
+    <div class="round">第 ${G.round} 輪結果</div>
+    <div class="card">${wordBoxes(last)}
+      <div class="hint">綠色 = 已經撞詞。<br>語音討論一下，下一輪想一個「介於這些詞之間」的詞！</div></div>
+    ${isHost ? `<button class="btn" id="next">下一輪</button>` : `<div class="hint">等待房主開始下一輪…</div>`}
+    ${histHTML(true)}
+    ${leaveBtn()}`;
+  if (isHost) document.getElementById('next').onclick = hostNext;
+  bindLeave();
+}
 
-    peer = new Peer();
+function renderWin() {
+  const last = G.history[G.history.length - 1];
+  app.innerHTML = `
+    <div class="win">🎉</div>
+    <h1 style="letter-spacing:.1em">心有靈犀！</h1>
+    <div class="sub">全員同詞，共用了 ${G.round} 輪</div>
+    <div class="card">${wordBoxes(last)}</div>
+    ${histHTML(true)}
+    ${isHost ? `<button class="btn" id="again">再玩一局</button>` : `<div class="hint">等待房主開啟新一局…</div>`}
+    ${leaveBtn()}`;
+  if (isHost) document.getElementById('again').onclick = hostRestart;
+  bindLeave();
+}
 
-    peer.on('open', (id) => {
-      myId = id;
-      hostConn = peer.connect('swg-' + code);
-
-      hostConn.on('open', () => {
-        hostConn.send({ type: 'JOIN', name: myName });
-      });
-
-      hostConn.on('data', (data) => handleDataClient(data));
-      hostConn.on('close', () => alert('与房主断开连接'));
-    });
-
-    peer.on('error', (err) => alert('连接房间失败，请检查 3 位房间码是否正确！'));
-  }
-
-  // --- 房主数据处理 ---
-  function handleDataHost(conn, data) {
-    if (data.type === 'JOIN') {
-      playersData[conn.peer] = { name: data.name, word: '', ready: false, vote: null };
-      
-      broadcast({ type: 'PLAYERS_UPDATE', players: playersData, target: targetPlayers });
-      updatePlayerList();
-
-      if (Object.keys(playersData).length === targetPlayers) {
-        setTimeout(enterGameMode, 800);
-      }
-    } else if (data.type === 'SUBMIT_WORD') {
-      playersData[conn.peer].word = data.word;
-      playersData[conn.peer].ready = true;
-      
-      broadcast({ type: 'PLAYERS_UPDATE', players: playersData });
-      checkAllSubmitted();
-    } else if (data.type === 'CAST_VOTE') {
-      playersData[conn.peer].vote = data.vote;
-      checkAllVoted();
-    }
-  }
-
-  // --- 客户端数据处理 ---
-  function handleDataClient(data) {
-    if (data.type === 'FULL') {
-      alert('对不起，该房间人数已满！');
-      return;
-    }
-    if (data.type === 'PLAYERS_UPDATE') {
-      playersData = data.players;
-      if (data.target) targetPlayers = data.target;
-      
-      if (!document.getElementById('waiting-room').classList.contains('hidden')) {
-        updatePlayerList();
-      }
-    } else if (data.type === 'ENTER_GAME') {
-      enterGameMode();
-    } else if (data.type === 'SET_TOPIC') {
-      globalTopic = data.topic;
-      startRoundUI(data.topic, data.round);
-    } else if (data.type === 'REVEAL') {
-      showResults(data.players, data.voteStatus);
-    } else if (data.type === 'END_GAME') {
-      alert('游戏已由房主结束！');
-      location.reload();
-    }
-  }
-
-  function broadcast(data) {
-    connections.forEach(c => c.send(data));
-  }
-
-  function showWaitingRoom(code) {
-    document.getElementById('lobby').classList.add('hidden');
-    document.getElementById('waiting-room').classList.remove('hidden');
-    document.getElementById('room-code-display').innerText = code;
-  }
-
-  function updatePlayerList() {
-    const listEl = document.getElementById('player-list');
-    listEl.innerHTML = '';
-    
-    Object.values(playersData).forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'player-card ready';
-      card.innerHTML = `<strong>${p.name}</strong><span style="font-size:0.8rem; color:var(--subtext); margin-top:4px;">已加入 (${Object.keys(playersData).length}/${targetPlayers})</span>`;
-      listEl.appendChild(card);
-    });
-  }
-
-  function copyInviteLink() {
-    const code = document.getElementById('room-code-display').innerText;
-    const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
-    navigator.clipboard.writeText(url);
-    alert('邀请链接已复制！快发给朋友吧。');
-  }
-
-  function enterGameMode() {
-    document.getElementById('waiting-room').classList.add('hidden');
-    document.getElementById('game-room').classList.remove('hidden');
-
-    if (isHost) {
-      broadcast({ type: 'ENTER_GAME' });
-      showHostTopicInput();
-    } else {
-      document.getElementById('guest-topic-waiting').classList.remove('hidden');
-    }
-  }
-
-  function showHostTopicInput() {
-    document.getElementById('host-topic-section').classList.remove('hidden');
-    document.getElementById('guest-topic-waiting').classList.add('hidden');
-    document.getElementById('active-game-area').classList.add('hidden');
-  }
-
-  function hostPublishTopic() {
-    const topic = document.getElementById('custom-topic-input').value.trim();
-    if (!topic) return alert('请先设定本局的核心主题！');
-
-    globalTopic = topic;
-    currentRound = 1;
-    broadcast({ type: 'SET_TOPIC', topic: globalTopic, round: currentRound });
-    startRoundUI(globalTopic, currentRound);
-  }
-
-  function startRoundUI(topic, round) {
-    document.getElementById('host-topic-section').classList.add('hidden');
-    document.getElementById('guest-topic-waiting').classList.add('hidden');
-    document.getElementById('active-game-area').classList.remove('hidden');
-    
-    document.getElementById('current-topic-display').innerText = `主题：${topic}`;
-    document.getElementById('round-num').innerText = round;
-
-    document.getElementById('input-section').classList.remove('hidden');
-    document.getElementById('waiting-others').classList.add('hidden');
-    document.getElementById('result-section').classList.add('hidden');
-    document.getElementById('my-word').value = '';
-  }
-
-  function submitWord() {
-    const word = document.getElementById('my-word').value.trim();
-    if (!word) return alert('请输入你的词语！');
-
-    document.getElementById('input-section').classList.add('hidden');
-    document.getElementById('waiting-others').classList.remove('hidden');
-
-    if (isHost) {
-      playersData[myId].word = word;
-      playersData[myId].ready = true;
-      checkAllSubmitted();
-    } else {
-      hostConn.send({ type: 'SUBMIT_WORD', word });
-    }
-  }
-
-  function checkAllSubmitted() {
-    if (!isHost) return;
-    
-    const allReady = Object.values(playersData).every(p => p.ready);
-    if (allReady) {
-      Object.keys(playersData).forEach(id => playersData[id].vote = null);
-      broadcast({ type: 'REVEAL', players: playersData, voteStatus: getVoteStats() });
-      showResults(playersData, getVoteStats());
-    }
-  }
-
-  function getVoteStats() {
-    let total = Object.keys(playersData).length;
-    let yesCount = Object.values(playersData).filter(p => p.vote === true).length;
-    let noCount = Object.values(playersData).filter(p => p.vote === false).length;
-    return { total, yesCount, noCount };
-  }
-
-  function showResults(data, voteStatus) {
-    document.getElementById('waiting-others').classList.add('hidden');
-    document.getElementById('result-section').classList.remove('hidden');
-
-    const grid = document.getElementById('result-grid');
-    grid.innerHTML = '';
-
-    let roundWordsSummary = `第 ${currentRound} 轮：`;
-
-    Object.values(data).forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'player-card ready';
-      card.innerHTML = `<strong>${p.name}</strong><div class="word-badge">${p.word}</div>`;
-      grid.appendChild(card);
-      roundWordsSummary += ` ${p.name}:${p.word} `;
-    });
-
-    historyRounds.push(roundWordsSummary);
-    updateHistoryUI();
-
-    updateVoteUI(voteStatus);
-  }
-
-  function castVote(voteVal) {
-    if (isHost) {
-      playersData[myId].vote = voteVal;
-      checkAllVoted();
-    } else {
-      hostConn.send({ type: 'CAST_VOTE', vote: voteVal });
-    }
-    document.getElementById('vote-yes-btn').disabled = true;
-    document.getElementById('vote-no-btn').disabled = true;
-  }
-
-  function checkAllVoted() {
-    if (!isHost) return;
-    const stats = getVoteStats();
-    broadcast({ type: 'REVEAL', players: playersData, voteStatus: stats });
-    showResults(playersData, stats);
-  }
-
-  function updateVoteUI(stats) {
-    const textEl = document.getElementById('vote-status-text');
-    textEl.innerText = `当前投票：${stats.yesCount} 票赞成 / ${stats.noCount} 票反对 (共 ${stats.total} 人)`;
-
-    const allVoted = Object.values(playersData).every(p => p.vote !== null);
-    if (allVoted) {
-      const titleEl = document.getElementById('result-title');
-      let success = stats.yesCount > (stats.total / 2);
-
-      if (success) {
-        titleEl.innerText = "🎉 投票通过！恭喜你们达成默契！";
-        titleEl.style.color = "#10b981";
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      } else {
-        titleEl.innerText = "😢 赞成票未过半，本轮挑战失败~";
-        titleEl.style.color = "#ec4899";
-      }
-
-      if (isHost) {
-        document.getElementById('host-next-controls').classList.remove('hidden');
-        document.getElementById('client-waiting-next').classList.add('hidden');
-      } else {
-        document.getElementById('host-next-controls').classList.add('hidden');
-        document.getElementById('client-waiting-next').classList.remove('hidden');
-      }
-    }
-  }
-
-  function updateHistoryUI() {
-    const listEl = document.getElementById('history-list');
-    listEl.innerHTML = historyRounds.map(h => `<div>• ${h}</div>`).join('');
-  }
-
-  function startNextRound() {
-    if (!isHost) return;
-
-    currentRound++;
-    Object.keys(playersData).forEach(id => {
-      playersData[id].word = '';
-      playersData[id].ready = false;
-      playersData[id].vote = null;
-    });
-
-    // 沿用当前主题直接进入下一轮
-    broadcast({ type: 'SET_TOPIC', topic: globalTopic, round: currentRound });
-    startRoundUI(globalTopic, currentRound);
-  }
-
-  function endGame() {
-    if (!isHost) return;
-    broadcast({ type: 'END_GAME' });
-    alert('游戏已结束！');
-    location.reload();
-  }
+home();
 </script>
 </body>
 </html>
